@@ -1198,6 +1198,10 @@
                         <input type="date" id="edit-paid-organizer-date">
                     </div>
                     <div class="form-group">
+                        <label for="edit-transaction-invoice">חשבון עסקה</label>
+                        <input type="text" id="edit-transaction-invoice" placeholder="נוצר אוטומטית">
+                    </div>
+                    <div class="form-group">
                         <label for="edit-invoice-number">מס' חשבונית</label>
                         <input type="text" id="edit-invoice-number" placeholder="הכנס מספר חשבונית">
                     </div>
@@ -1805,6 +1809,7 @@
                     paymentDate: document.getElementById('edit-payment-date').value,
                     paidOrganizer: document.getElementById('edit-paid-organizer').value,
                     paidOrganizerDate: document.getElementById('edit-paid-organizer-date').value,
+                    transactionInvoice: document.getElementById('edit-transaction-invoice').value,
                     invoiceNumber: document.getElementById('edit-invoice-number').value,
                     notes: document.getElementById('edit-notes').value
                 };
@@ -1979,6 +1984,7 @@
             document.getElementById('edit-payment-date').value = order.paymentDate || '';
             document.getElementById('edit-paid-organizer').value = order.paidOrganizer || 'no';
             document.getElementById('edit-paid-organizer-date').value = order.paidOrganizerDate || '';
+            document.getElementById('edit-transaction-invoice').value = order.transactionInvoice || '';
             document.getElementById('edit-invoice-number').value = order.invoiceNumber || '';
             document.getElementById('edit-notes').value = order.notes || '';
 
