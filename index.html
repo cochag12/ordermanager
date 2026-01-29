@@ -370,13 +370,54 @@
 
         .table-container {
             overflow-x: auto;
+            overflow-y: auto;
+            max-height: 70vh;
             border-radius: 12px;
             border: 1px solid var(--border);
+            position: relative;
+        }
+        
+        /* סרגל גלילה תמיד נראה */
+        .table-container::-webkit-scrollbar {
+            height: 14px;
+            width: 14px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 7px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 7px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+        
+        /* כפתורי גלילה */
+        .scroll-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: flex-start;
+        }
+        .scroll-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .scroll-btn:hover {
+            background: var(--accent);
         }
 
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             min-width: 1400px;
         }
 
@@ -392,6 +433,20 @@
             color: var(--accent);
             font-size: 0.9rem;
             white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        /* כפתורי גלילה קבועים */
+        .scroll-buttons-sticky {
+            position: sticky;
+            top: 10px;
+            z-index: 20;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: flex-start;
         }
 
         tr:hover {
@@ -1014,7 +1069,11 @@
                             </div>
                         </div>
                     </div>
-                    <div class="table-container">
+                    <div class="scroll-buttons" style="position: sticky; top: 0; z-index: 100; background: var(--bg-primary); padding: 10px 0;">
+                        <button class="scroll-btn" onclick="scrollTableLeft('table-all')">→ גלול ימינה</button>
+                        <button class="scroll-btn" onclick="scrollTableRight('table-all')">← גלול שמאלה</button>
+                    </div>
+                    <div class="table-container" id="container-all">
                         <table>
                             <thead>
                                 <tr>
@@ -2824,6 +2883,21 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // פונקציות גלילה לטבלה
+        function scrollTableLeft(tableId) {
+            const container = document.getElementById('container-all');
+            if (container) {
+                container.scrollBy({ left: 300, behavior: 'smooth' });
+            }
+        }
+        
+        function scrollTableRight(tableId) {
+            const container = document.getElementById('container-all');
+            if (container) {
+                container.scrollBy({ left: -300, behavior: 'smooth' });
+            }
         }
 
         // סגירת modal בלחיצה מחוץ
