@@ -622,10 +622,13 @@
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
+            position: relative;
+            z-index: 1001;
         }
 
         .report-by-field {
             position: relative;
+            z-index: 1001;
         }
 
         .report-dropdown {
@@ -637,7 +640,7 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             min-width: 200px;
-            z-index: 100;
+            z-index: 1000;
             margin-top: 0.5rem;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
