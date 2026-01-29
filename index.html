@@ -1026,6 +1026,7 @@
                                     <th>נושא</th>
                                     <th>נשלח בתאריך</th>
                                     <th>סכום</th>
+                                    <th>חשבון עסקה</th>
                                     <th>תאריך תשלום</th>
                                     <th>שולם לעורך המכרז</th>
                                     <th>שולם לעורך בתאריך</th>
@@ -1911,6 +1912,7 @@
                             <td>${escapeHtml(order.courtName) || '-'}</td>
                             <td>${formatDate(order.sentDate)}</td>
                             <td>₪${(order.amount || 0).toLocaleString()}</td>
+                            <td>${escapeHtml(order.transactionInvoice) || '-'}</td>
                             <td>${formatDate(order.paymentDate)}</td>
                             <td>${order.paidOrganizer === 'yes' ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
                             <td>${formatDate(order.paidOrganizerDate)}</td>
@@ -2143,9 +2145,9 @@
 
             let invoiceNumber;
             
-            // בדיקה אם להזמנה כבר יש מספר חשבונית
-            if (order.invoiceNumber) {
-                invoiceNumber = order.invoiceNumber;
+            // בדיקה אם להזמנה כבר יש מספר חשבון עסקה
+            if (order.transactionInvoice) {
+                invoiceNumber = order.transactionInvoice;
             } else {
                 // יצירת מספר חשבון עסקה חדש
                 const year = new Date().getFullYear().toString().slice(-2);
@@ -2162,12 +2164,12 @@
 
                 invoiceNumber = `${clientNumber}/${year}.${invoiceSeq.toString().padStart(2, '0')}`;
                 
-                // שמירת מספר החשבונית בהזמנה
+                // שמירת מספר חשבון העסקה בהזמנה
                 try {
-                    await db.ref('orders/' + orderId + '/invoiceNumber').set(invoiceNumber);
-                    order.invoiceNumber = invoiceNumber;
+                    await db.ref('orders/' + orderId + '/transactionInvoice').set(invoiceNumber);
+                    order.transactionInvoice = invoiceNumber;
                 } catch (e) {
-                    console.error('Error saving invoice number:', e);
+                    console.error('Error saving transaction invoice number:', e);
                 }
             }
             
@@ -3062,6 +3064,7 @@
                             <th>נושא</th>
                             <th>נשלח בתאריך</th>
                             <th>סכום</th>
+                            <th>חשבון עסקה</th>
                             <th>תאריך תשלום</th>
                             <th>שולם לעורך המכרז</th>
                             <th>שולם לעורך בתאריך</th>
@@ -3084,6 +3087,7 @@
                                 <td>${escapeHtml(order.courtName) || '-'}</td>
                                 <td>${formatDate(order.sentDate)}</td>
                                 <td>₪${(order.amount || 0).toLocaleString()}</td>
+                                <td>${escapeHtml(order.transactionInvoice) || '-'}</td>
                                 <td>${formatDate(order.paymentDate)}</td>
                                 <td>${isPaidToOrganizer ? 'כן' : 'לא'}</td>
                                 <td>${formatDate(order.paidOrganizerDate)}</td>
