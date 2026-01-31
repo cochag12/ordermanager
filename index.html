@@ -2272,18 +2272,18 @@
             const shekels = Math.floor(amount);
             const agorot = Math.round((amount - shekels) * 100);
 
-            if (shekels === 0 && agorot === 0) return 'אפס שקלים';
+            if (shekels === 0 && agorot === 0) return 'אפס ש"ח';
 
             let result = '';
 
             // חלק השקלים (מין זכר)
             if (shekels > 0) {
                 if (shekels === 1) {
-                    result = 'שקל אחד';
+                    result = 'ש"ח אחד';
                 } else if (shekels === 2) {
-                    result = 'שני שקלים';
+                    result = 'שני ש"ח';
                 } else {
-                    result = numberToHebrewWordsGendered(shekels, 'masculine') + ' שקלים';
+                    result = numberToHebrewWordsGendered(shekels, 'masculine') + ' ש"ח';
                 }
             }
 
