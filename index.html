@@ -734,6 +734,14 @@
             background: currentColor;
         }
 
+        tr.paid-row {
+            background: rgba(16, 185, 129, 0.08) !important;
+            border-right: 3px solid var(--success);
+        }
+        tr.paid-row:hover {
+            background: rgba(16, 185, 129, 0.15) !important;
+        }
+
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -1880,8 +1888,12 @@
                         }
                         
                         if (handle) {
-                            // בדיקת הרשאות
-                            const permission = await handle.queryPermission({ mode: 'readwrite' });
+                            // בדיקת הרשאות - אם אין, מבקש מהמשתמש
+                            let permission = await handle.queryPermission({ mode: 'readwrite' });
+                            if (permission !== 'granted') {
+                                permission = await handle.requestPermission({ mode: 'readwrite' });
+                            }
+                            
                             if (permission === 'granted') {
                                 // שמירה/דריסה של קובץ היום
                                 const fileHandle = await handle.getFileHandle(fileName, { create: true });
@@ -1895,16 +1907,18 @@
                                 console.log(`Backup saved to folder: ${fileName}`);
                                 showToast('backup', '💾 גיבוי בוצע', `${reason} - נשמר בתיקייה`, true);
                                 return;
-                            } else {
-                                console.log('Permission needed, falling back to download');
                             }
+                            // סירב - דולג בשקט
+                            console.log('Permission denied, backup skipped');
+                            return;
                         }
                     } catch (e) {
-                        console.warn('Folder backup failed, falling back to download:', e);
+                        console.warn('Folder backup failed:', e);
+                        return;
                     }
                 }
                 
-                // Fallback: הורדת קובץ (דורס את קובץ היום)
+                // Fallback: הורדת קובץ - רק אם לא הוגדר מצב תיקייה כלל
                 const prefix = localStorage.getItem('backupPrefix') || 'גיבוי_הזמנות';
                 const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
@@ -2477,6 +2491,8 @@
             document.getElementById('admin-panel').style.display = 'none';
         }
 
+        let backupDoneThisSession = false;
+        
         function showApp() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('loading-screen').style.display = 'none';
@@ -2489,17 +2505,20 @@
                 bellWrapper.style.display = (currentUser?.username === BACKUP_USER) ? '' : 'none';
             }
             
-            // בדיקת גיבוי אוטומטי בכל כניסה למערכת
-            checkAndAutoBackup();
-            
-            // גיבוי אוטומטי למשתמש חגי
-            if (isBackupUser) {
-                if (!backupConfigured) {
-                    // פעם ראשונה - שואל על נתיב
-                    setTimeout(() => showBackupSetupModal(), 500);
-                } else {
-                    // גיבוי שקט בכניסה
-                    setTimeout(() => performSilentBackup('כניסה למערכת'), 1000);
+            // גיבוי רק פעם אחת בכניסה - לא בכל שינוי נתונים
+            if (!backupDoneThisSession) {
+                backupDoneThisSession = true;
+                
+                // בדיקת גיבוי שבועי לשרת
+                checkAndAutoBackup();
+                
+                // גיבוי שקט למשתמש חגי
+                if (isBackupUser) {
+                    if (!backupConfigured) {
+                        setTimeout(() => showBackupSetupModal(), 500);
+                    } else {
+                        setTimeout(() => performSilentBackup('כניסה למערכת'), 1000);
+                    }
                 }
             }
         }
@@ -2663,6 +2682,7 @@
             
             isBackupUser = false;
             backupConfigured = false;
+            backupDoneThisSession = false;
             isFirstLoad = true;
             lastOrdersSnapshot = null;
             lastDeletedSnapshot = null;
@@ -3019,8 +3039,17 @@
                 );
             }
 
-            // מיון לפי תאריך הזמנה (חדש לישן)
-            filteredOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+            // מיון: בחיפוש - לא שולם למעלה, שולם למטה. אחרת לפי תאריך
+            if (searchTerm && type === 'all') {
+                filteredOrders.sort((a, b) => {
+                    const aPaid = a.paymentDate ? 1 : 0;
+                    const bPaid = b.paymentDate ? 1 : 0;
+                    if (aPaid !== bPaid) return aPaid - bPaid;
+                    return new Date(b.orderDate) - new Date(a.orderDate);
+                });
+            } else {
+                filteredOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+            }
 
             const tbody = document.getElementById(`table-${type}`);
             
@@ -3059,7 +3088,7 @@
                     const match = findClientNumber(order.subject);
                     const clientNum = match ? match.number : (order.clientNumber || '-');
                     return `
-                        <tr>
+                        <tr class="${order.paymentDate ? 'paid-row' : ''}">
                             <td>
                                 <div class="actions-cell">
                                     <button class="btn btn-edit" onclick="editOrder('${order.id}')">✏️ ערוך</button>
