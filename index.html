@@ -1866,8 +1866,8 @@
                 
                 const jsonStr = JSON.stringify(backupData, null, 2);
                 const now = new Date();
-                const dateStr = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-                const fileName = `גיבוי_${dateStr}.json`;
+                const todayStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+                const fileName = `גיבוי_${todayStr}.json`;
                 
                 const backupMode = localStorage.getItem('backupMode');
                 
@@ -1883,16 +1883,19 @@
                             // בדיקת הרשאות
                             const permission = await handle.queryPermission({ mode: 'readwrite' });
                             if (permission === 'granted') {
+                                // שמירה/דריסה של קובץ היום
                                 const fileHandle = await handle.getFileHandle(fileName, { create: true });
                                 const writable = await fileHandle.createWritable();
                                 await writable.write(jsonStr);
                                 await writable.close();
                                 
+                                // מחיקת קבצי גיבוי ישנים (שומר רק היום ואתמול)
+                                await cleanupOldBackups(handle, todayStr);
+                                
                                 console.log(`Backup saved to folder: ${fileName}`);
                                 showToast('backup', '💾 גיבוי בוצע', `${reason} - נשמר בתיקייה`, true);
                                 return;
                             } else {
-                                // צריך הרשאה מחדש - fallback להורדה
                                 console.log('Permission needed, falling back to download');
                             }
                         }
@@ -1901,13 +1904,13 @@
                     }
                 }
                 
-                // Fallback: הורדת קובץ
+                // Fallback: הורדת קובץ (דורס את קובץ היום)
                 const prefix = localStorage.getItem('backupPrefix') || 'גיבוי_הזמנות';
                 const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${prefix}_${dateStr}.json`;
+                a.download = `${prefix}_${todayStr}.json`;
                 a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
@@ -1924,6 +1927,30 @@
                 setTimeout(() => {
                     indicator.classList.remove('active');
                 }, 1500);
+            }
+        }
+
+        // מחיקת קבצי גיבוי ישנים - שומר רק היום ואתמול
+        async function cleanupOldBackups(dirHandle, todayStr) {
+            try {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().slice(0, 10);
+                
+                const keepDates = [todayStr, yesterdayStr];
+                
+                for await (const entry of dirHandle.values()) {
+                    if (entry.kind === 'file' && entry.name.startsWith('גיבוי_') && entry.name.endsWith('.json')) {
+                        // חילוץ תאריך מהשם: גיבוי_YYYY-MM-DD.json
+                        const dateMatch = entry.name.match(/גיבוי_(\d{4}-\d{2}-\d{2})/);
+                        if (dateMatch && !keepDates.includes(dateMatch[1])) {
+                            await dirHandle.removeEntry(entry.name);
+                            console.log(`Deleted old backup: ${entry.name}`);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Cleanup old backups error:', e);
             }
         }
 
