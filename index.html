@@ -99,6 +99,241 @@
             opacity: 0.7;
         }
 
+        /* === מערכת התראות === */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 400px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--accent);
+            border-right: 4px solid var(--accent);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            animation: toastIn 0.4s ease, toastOut 0.4s ease 5s forwards;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            direction: rtl;
+        }
+
+        .toast-icon {
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--accent);
+        }
+
+        .toast-message {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .toast-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            margin-top: 0.3rem;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .toast-close:hover {
+            color: var(--text-primary);
+        }
+
+        .toast.toast-backup {
+            border-color: var(--success);
+        }
+
+        .toast.toast-backup .toast-title {
+            color: var(--success);
+        }
+
+        .toast.toast-warning {
+            border-color: var(--warning);
+        }
+
+        .toast.toast-warning .toast-title {
+            color: var(--warning);
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
+        }
+
+        /* תג התראות */
+        .notification-bell {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.4rem;
+            margin-right: 1rem;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -6px;
+            right: -8px;
+            background: var(--warning);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            animation: pulse 2s infinite;
+        }
+
+        .change-item {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: var(--bg-secondary);
+        }
+        .change-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .change-item-action {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .change-item-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+        .change-item-detail {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .change-item-user {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            background: var(--primary);
+            color: white;
+            margin-top: 4px;
+        }
+
+        .bell-panel {
+            display: none;
+            position: fixed;
+            top: 3.5rem;
+            right: 1rem;
+            width: 380px;
+            max-height: 450px;
+            overflow-y: auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            z-index: 5000;
+            padding: 0;
+        }
+        .bell-panel.active {
+            display: block;
+        }
+        .bell-panel-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            z-index: 1;
+        }
+        .bell-panel-header h3 {
+            color: var(--accent);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+        .bell-panel .change-item {
+            margin: 8px;
+        }
+
+        .notification-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        /* גיבוי שקט - אינדיקציה */
+        .backup-indicator {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--success);
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            color: var(--success);
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 5000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .backup-indicator.active {
+            display: inline-flex;
+        }
+
+        .backup-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            border-top-color: var(--success);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
         .login-card {
             background: var(--bg-card);
             border-radius: 16px;
@@ -788,6 +1023,47 @@
     </style>
 </head>
 <body>
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- Backup Indicator -->
+    <div class="backup-indicator" id="backup-indicator">
+        <div class="backup-spinner"></div>
+        <span>מבצע גיבוי...</span>
+    </div>
+
+    <!-- Backup Setup Modal -->
+    <div class="modal-overlay" id="backup-setup-modal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">💾 הגדרת גיבוי אוטומטי</h3>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                המערכת תבצע גיבוי אוטומטי של כל הנתונים בכל כניסה ויציאה שלך.
+            </p>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                בחר תיקייה במחשב שלך לשמירת קבצי הגיבוי:
+            </p>
+            <div id="backup-setup-content">
+                <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
+                    <button class="btn btn-primary" id="btn-choose-folder" onclick="chooseBackupFolder()">📁 בחר תיקייה</button>
+                    <span id="chosen-folder-path" style="color: var(--text-secondary); font-size: 0.9rem;">לא נבחרה תיקייה</span>
+                </div>
+                <div id="folder-fallback" style="display: none; margin-bottom: 1rem;">
+                    <p style="color: var(--accent); margin-bottom: 0.5rem;">⚠️ הדפדפן לא תומך בבחירת תיקייה. הגיבויים יורדו אוטומטית לתיקיית ההורדות שלך.</p>
+                    <div class="form-group">
+                        <label for="backup-prefix">שם קידומת לקובצי גיבוי:</label>
+                        <input type="text" id="backup-prefix" value="גיבוי_הזמנות" placeholder="גיבוי_הזמנות">
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" id="btn-save-backup-setup" onclick="saveBackupSetup()">✅ שמור והפעל גיבוי</button>
+                <button class="btn btn-secondary" onclick="skipBackupSetup()">דלג</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Login Screen -->
         <div id="login-screen">
@@ -897,6 +1173,15 @@
                 <p style="color: var(--text-secondary); margin-bottom: 10px;">צפייה בכל הפעולות שבוצעו במערכת</p>
                 <button class="btn btn-primary" onclick="showActivityLogModal()">📋 הצג דוח פעילות</button>
             </div>
+            
+            <div class="admin-section">
+                <h2 class="card-title">🔔 שינויים שבוצעו</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 10px;">פירוט כל השינויים בהזמנות ע"י כל המשתמשים</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="showChangesModal()">📝 הצג שינויים</button>
+                    <button class="btn btn-danger" onclick="clearAllChanges()">🗑️ נקה היסטוריה</button>
+                </div>
+            </div>
         </div>
         
         <!-- Activity Log Modal -->
@@ -921,11 +1206,52 @@
             </div>
         </div>
         
+        <!-- Changes History Modal -->
+        <div class="modal-overlay" id="changes-modal">
+            <div class="modal" style="max-width: 850px;">
+                <h2 class="modal-title">🔔 שינויים שבוצעו בהזמנות</h2>
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <label>סינון משתמש:</label>
+                    <select id="changes-user-filter" onchange="filterChanges()" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <option value="all">כל המשתמשים</option>
+                    </select>
+                    <label>הצג:</label>
+                    <select id="changes-count-filter" onchange="filterChanges()" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <option value="50">50 אחרונים</option>
+                        <option value="100">100 אחרונים</option>
+                        <option value="200">200 אחרונים</option>
+                        <option value="all">הכל</option>
+                    </select>
+                </div>
+                <div id="changes-list" style="max-height: 500px; overflow-y: auto;">
+                    <p style="color: var(--text-secondary);">טוען שינויים...</p>
+                </div>
+                <div class="form-actions" style="margin-top: 15px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeChangesModal()">סגור</button>
+                </div>
+            </div>
+        </div>
+        
         <!-- Restore Modal -->
         <div class="modal-overlay" id="restore-modal">
             <div class="modal" style="max-width: 600px;">
                 <h2 class="modal-title">🔄 שחזור מגיבוי</h2>
                 <p style="color: var(--warning); margin-bottom: 15px;">⚠️ שחזור מגיבוי ימחק את כל הנתונים הנוכחיים ויחליף אותם בנתונים מהגיבוי!</p>
+                
+                <!-- שחזור מקובץ JSON -->
+                <div style="margin-bottom: 20px; padding: 15px; border: 2px dashed var(--primary); border-radius: 10px; background: rgba(99,102,241,0.05);">
+                    <h3 style="margin-bottom: 8px; color: var(--primary); font-size: 1rem;">📂 שחזור מקובץ JSON</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">העלה קובץ גיבוי שנשמר במחשב שלך (מגיבוי אוטומטי או ידני)</p>
+                    <input type="file" id="restore-file-input" accept=".json" style="display:none" onchange="handleRestoreFileSelect(event)">
+                    <button class="btn btn-primary" onclick="document.getElementById('restore-file-input').click()">📁 בחר קובץ גיבוי...</button>
+                    <div id="restore-file-info" style="margin-top: 10px; display: none; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                        <div id="restore-file-details" style="font-size: 0.85rem; color: var(--text-secondary);"></div>
+                        <button class="btn btn-warning" style="margin-top: 10px;" onclick="executeRestoreFromFile()">⚡ שחזר מקובץ זה</button>
+                    </div>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid var(--border-color); margin: 15px 0;">
+                <h3 style="margin-bottom: 10px; font-size: 1rem;">☁️ שחזור מגיבוי שרת</h3>
                 <div id="backup-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;">
                     <p style="color: var(--text-secondary);">טוען גיבויים...</p>
                 </div>
@@ -955,7 +1281,24 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 20</div>
+                <div class="version">גרסה 24</div>
+                <!-- Notification Bell - only for חגי -->
+                <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
+                    <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
+                        🔔
+                        <span class="notification-badge" id="notification-badge" style="display: none;">0</span>
+                    </span>
+                </div>
+                <!-- Bell Panel - שינויים של משתמשים אחרים -->
+                <div class="bell-panel" id="bell-panel">
+                    <div class="bell-panel-header">
+                        <h3>🔔 שינויים של משתמשים אחרים</h3>
+                        <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="clearBellChanges()">נקה</button>
+                    </div>
+                    <div id="bell-panel-list">
+                        <div class="notification-empty">טוען...</div>
+                    </div>
+                </div>
             </header>
 
             <div class="tabs">
@@ -1001,8 +1344,11 @@
                                 <input type="number" id="amount" placeholder="0" min="0" step="0.01">
                             </div>
                             <div class="form-group">
-                                <label for="payment-date">תאריך תשלום</label>
-                                <input type="date" id="payment-date">
+                                <label for="paid-by-client">שולם ע"י הלקוח</label>
+                                <select id="paid-by-client">
+                                    <option value="no">לא</option>
+                                    <option value="yes">כן</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label for="paid-organizer">שולם לעורך המכרז</label>
@@ -1067,7 +1413,7 @@
                                     <button onclick="generateReport('byCourtName')">לפי נושא</button>
                                     <button onclick="generateReport('byOrderDate')">לפי תאריך הזמנה</button>
                                     <button onclick="generateReport('bySentDate')">לפי תאריך שליחה</button>
-                                    <button onclick="generateReport('byPaymentDate')">לפי תאריך תשלום</button>
+                                    <button onclick="generateReport('byPaymentDate')">לפי שולם ע"י הלקוח</button>
                                     <button onclick="generateReport('byAmount')">לפי סכום</button>
                                     <button onclick="generateReport('paidOnly')">✅ שולמו בלבד</button>
                                 </div>
@@ -1091,7 +1437,7 @@
                                     <th>נשלח בתאריך</th>
                                     <th>סכום</th>
                                     <th>חשבון עסקה</th>
-                                    <th>תאריך תשלום</th>
+                                    <th>שולם ע"י הלקוח</th>
                                     <th>שולם לעורך המכרז</th>
                                     <th>שולם לעורך בתאריך</th>
                                     <th>מס' חשבונית</th>
@@ -1174,7 +1520,7 @@
                                     <th>תאריך הזמנה</th>
                                     <th>נושא</th>
                                     <th>סכום</th>
-                                    <th>תאריך תשלום</th>
+                                    <th>שולם ע"י הלקוח</th>
                                     <th>שולם לעורך</th>
                                 </tr>
                             </thead>
@@ -1275,8 +1621,11 @@
                         <input type="number" id="edit-amount" min="0" step="0.01">
                     </div>
                     <div class="form-group">
-                        <label for="edit-payment-date">תאריך תשלום</label>
-                        <input type="date" id="edit-payment-date">
+                        <label for="edit-paid-by-client">שולם ע"י הלקוח</label>
+                        <select id="edit-paid-by-client">
+                            <option value="no">לא</option>
+                            <option value="yes">כן</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="edit-paid-organizer">שולם לעורך המכרז</label>
@@ -1337,6 +1686,610 @@
         let clientNumbers = {}; // מיפוי שם לקוח -> מספר לקוח
         let currentUser = null;
         const ADMIN_PASSWORD = 'cochag12';
+
+        // === מערכת גיבוי אוטומטי ===
+        const BACKUP_USER = 'חגי';
+        const BACKUP_PASS = 'חגי';
+        let backupFolderHandle = null; // File System Access API
+        let isBackupUser = false;
+        let backupConfigured = false;
+        let lastKnownOrdersHash = ''; // לזיהוי שינויים
+
+        // === מערכת התראות ===
+        let unreadCount = 0;
+        let lastOrdersSnapshot = null;
+        let lastDeletedSnapshot = null;
+        let isFirstLoad = true;
+        
+        // מזהה סשן ייחודי - לזיהוי שינויים שבוצעו על ידי הסשן הנוכחי
+        const SESSION_ID = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        // מעקב אחרי מפתחות שהסשן הזה עדכן ברגעים האחרונים
+        let recentlyModifiedByMe = {};
+
+        function markAsModifiedByMe(key) {
+            recentlyModifiedByMe[key] = Date.now();
+            // ניקוי אוטומטי אחרי 10 שניות
+            setTimeout(() => {
+                delete recentlyModifiedByMe[key];
+            }, 10000);
+        }
+
+        function wasModifiedByMe(key) {
+            const ts = recentlyModifiedByMe[key];
+            if (!ts) return false;
+            // תקף רק 10 שניות
+            return (Date.now() - ts) < 10000;
+        }
+
+        // בדיקה אם המשתמש הוא משתמש הגיבוי
+        function checkIfBackupUser(username, password) {
+            return username === BACKUP_USER && password === BACKUP_PASS;
+        }
+
+        // בדיקת הגדרת גיבוי
+        function isBackupSetupDone() {
+            return localStorage.getItem('backupSetupDone') === 'true';
+        }
+
+        // הצגת מודל הגדרת גיבוי
+        function showBackupSetupModal() {
+            // בדיקה אם הדפדפן תומך ב-File System Access API
+            if (!('showDirectoryPicker' in window)) {
+                document.getElementById('btn-choose-folder').style.display = 'none';
+                document.getElementById('folder-fallback').style.display = 'block';
+            }
+            document.getElementById('backup-setup-modal').classList.add('active');
+        }
+
+        // בחירת תיקיית גיבוי
+        async function chooseBackupFolder() {
+            try {
+                backupFolderHandle = await window.showDirectoryPicker({
+                    mode: 'readwrite',
+                    startIn: 'documents'
+                });
+                document.getElementById('chosen-folder-path').textContent = '📂 ' + backupFolderHandle.name;
+                document.getElementById('chosen-folder-path').style.color = 'var(--success)';
+                
+                // שמירה ב-IndexedDB לשימוש עתידי
+                await saveDirectoryHandle(backupFolderHandle);
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    console.error('Error choosing folder:', e);
+                    // fallback
+                    document.getElementById('btn-choose-folder').style.display = 'none';
+                    document.getElementById('folder-fallback').style.display = 'block';
+                }
+            }
+        }
+
+        // שמירת ה-handle ב-IndexedDB
+        function saveDirectoryHandle(handle) {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('BackupDB', 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('handles')) {
+                        db.createObjectStore('handles');
+                    }
+                };
+                request.onsuccess = (e) => {
+                    const db = e.target.result;
+                    const tx = db.transaction('handles', 'readwrite');
+                    tx.objectStore('handles').put(handle, 'backupFolder');
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // שליפת ה-handle מ-IndexedDB
+        function loadDirectoryHandle() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('BackupDB', 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('handles')) {
+                        db.createObjectStore('handles');
+                    }
+                };
+                request.onsuccess = (e) => {
+                    const db = e.target.result;
+                    const tx = db.transaction('handles', 'readonly');
+                    const getReq = tx.objectStore('handles').get('backupFolder');
+                    getReq.onsuccess = () => resolve(getReq.result || null);
+                    getReq.onerror = () => resolve(null);
+                };
+                request.onerror = () => resolve(null);
+            });
+        }
+
+        // שמירת הגדרות גיבוי
+        function saveBackupSetup() {
+            localStorage.setItem('backupSetupDone', 'true');
+            
+            if (!backupFolderHandle) {
+                // fallback mode - שמירת prefix
+                const prefix = document.getElementById('backup-prefix')?.value || 'גיבוי_הזמנות';
+                localStorage.setItem('backupPrefix', prefix);
+                localStorage.setItem('backupMode', 'download');
+            } else {
+                localStorage.setItem('backupMode', 'folder');
+            }
+            
+            document.getElementById('backup-setup-modal').classList.remove('active');
+            backupConfigured = true;
+            
+            showToast('success', '✅ גיבוי הוגדר', 'גיבוי אוטומטי יתבצע בכל כניסה ויציאה');
+            
+            // גיבוי ראשון מיידי
+            performSilentBackup('הגדרה ראשונית');
+        }
+
+        // דילוג על הגדרת גיבוי
+        function skipBackupSetup() {
+            document.getElementById('backup-setup-modal').classList.remove('active');
+        }
+
+        // ביצוע גיבוי שקט
+        async function performSilentBackup(reason) {
+            if (!isBackupUser || !backupConfigured) return;
+            
+            const indicator = document.getElementById('backup-indicator');
+            indicator.classList.add('active');
+            
+            try {
+                // שליפת כל הנתונים מ-Firebase
+                const [ordersSnap, deletedSnap, clientNumSnap, counterSnap] = await Promise.all([
+                    db.ref('orders').once('value'),
+                    db.ref('deletedOrders').once('value'),
+                    db.ref('clientNumbers').once('value'),
+                    db.ref('orderCounter').once('value')
+                ]);
+                
+                const backupData = {
+                    backupDate: new Date().toISOString(),
+                    reason: reason,
+                    user: currentUser?.username || 'חגי',
+                    data: {
+                        orders: ordersSnap.val() || {},
+                        deletedOrders: deletedSnap.val() || {},
+                        clientNumbers: clientNumSnap.val() || {},
+                        orderCounter: counterSnap.val() || 0
+                    },
+                    stats: {
+                        totalOrders: ordersSnap.val() ? Object.keys(ordersSnap.val()).length : 0,
+                        totalDeleted: deletedSnap.val() ? Object.keys(deletedSnap.val()).length : 0
+                    }
+                };
+                
+                const jsonStr = JSON.stringify(backupData, null, 2);
+                const now = new Date();
+                const dateStr = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                const fileName = `גיבוי_${dateStr}.json`;
+                
+                const backupMode = localStorage.getItem('backupMode');
+                
+                if (backupMode === 'folder') {
+                    // נסיון לשמור בתיקייה שנבחרה
+                    try {
+                        let handle = backupFolderHandle;
+                        if (!handle) {
+                            handle = await loadDirectoryHandle();
+                        }
+                        
+                        if (handle) {
+                            // בדיקת הרשאות
+                            const permission = await handle.queryPermission({ mode: 'readwrite' });
+                            if (permission === 'granted') {
+                                const fileHandle = await handle.getFileHandle(fileName, { create: true });
+                                const writable = await fileHandle.createWritable();
+                                await writable.write(jsonStr);
+                                await writable.close();
+                                
+                                console.log(`Backup saved to folder: ${fileName}`);
+                                showToast('backup', '💾 גיבוי בוצע', `${reason} - נשמר בתיקייה`, true);
+                                return;
+                            } else {
+                                // צריך הרשאה מחדש - fallback להורדה
+                                console.log('Permission needed, falling back to download');
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Folder backup failed, falling back to download:', e);
+                    }
+                }
+                
+                // Fallback: הורדת קובץ
+                const prefix = localStorage.getItem('backupPrefix') || 'גיבוי_הזמנות';
+                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${prefix}_${dateStr}.json`;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                console.log(`Backup downloaded: ${a.download}`);
+                showToast('backup', '💾 גיבוי בוצע', `${reason} - הקובץ הורד`, true);
+                
+            } catch (e) {
+                console.error('Backup error:', e);
+                showToast('warning', '⚠️ שגיאה בגיבוי', e.message);
+            } finally {
+                setTimeout(() => {
+                    indicator.classList.remove('active');
+                }, 1500);
+            }
+        }
+
+        // === מערכת התראות (Toast) ===
+        function showToast(type, title, message, autoHide = true) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+            
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                    <div class="toast-time">${timeStr}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+            `;
+            
+            container.appendChild(toast);
+            
+            if (autoHide) {
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.style.animation = 'toastOut 0.4s ease forwards';
+                        setTimeout(() => toast.remove(), 400);
+                    }
+                }, 5000);
+            }
+        }
+
+        // === מערכת פעמון - שינויים של משתמשים אחרים ===
+        function addNotification() {
+            unreadCount++;
+            updateNotificationBadge();
+        }
+
+        function updateNotificationBadge() {
+            const badge = document.getElementById('notification-badge');
+            if (!badge) return;
+            if (unreadCount > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        async function toggleBellPanel() {
+            const panel = document.getElementById('bell-panel');
+            panel.classList.toggle('active');
+            
+            if (panel.classList.contains('active')) {
+                unreadCount = 0;
+                updateNotificationBadge();
+                await loadBellChanges();
+            }
+        }
+
+        async function loadBellChanges() {
+            const listEl = document.getElementById('bell-panel-list');
+            listEl.innerHTML = '<div class="notification-empty">טוען...</div>';
+            
+            try {
+                const snapshot = await db.ref('dataChanges').orderByChild('timestamp').limitToLast(100).once('value');
+                const data = snapshot.val();
+                
+                if (!data) {
+                    listEl.innerHTML = '<div class="notification-empty">אין שינויים</div>';
+                    return;
+                }
+                
+                const myUsername = currentUser?.username || '';
+                let changes = Object.keys(data)
+                    .map(key => ({id: key, ...data[key]}))
+                    .filter(c => c.user && c.user !== myUsername)
+                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                
+                if (changes.length === 0) {
+                    listEl.innerHTML = '<div class="notification-empty">אין שינויים ממשתמשים אחרים</div>';
+                    return;
+                }
+
+                const actionIcons = {
+                    'יצירת הזמנה': '📌',
+                    'עריכת הזמנה': '✏️',
+                    'מחיקת הזמנה': '🗑️',
+                    'מחיקה לצמיתות': '❌',
+                    'שחזור הזמנה': '♻️',
+                    'שחזור מגיבוי': '🔄',
+                    'שחזור מקובץ': '📂'
+                };
+                
+                listEl.innerHTML = changes.map(c => {
+                    const date = c.timestamp ? new Date(c.timestamp) : new Date(c.dateStr);
+                    const dateStr = date.toLocaleDateString('he-IL');
+                    const timeStr = date.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
+                    const icon = actionIcons[c.action] || '🔔';
+                    
+                    return `
+                        <div class="change-item">
+                            <div class="change-item-header">
+                                <span class="change-item-action">${icon} ${escapeHtml(c.action)}</span>
+                                <span class="change-item-time">${dateStr} ${timeStr}</span>
+                            </div>
+                            <div class="change-item-detail">
+                                ${c.orderNumber ? `הזמנה #${escapeHtml(String(c.orderNumber))}` : ''}
+                                ${c.orderSubject ? ` - ${escapeHtml(c.orderSubject)}` : ''}
+                                ${c.changedFields ? `<br>שדות: ${escapeHtml(c.changedFields)}` : ''}
+                            </div>
+                            <span class="change-item-user">👤 ${escapeHtml(c.user)}</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Error loading bell changes:', e);
+                listEl.innerHTML = '<div class="notification-empty">שגיאה בטעינה</div>';
+            }
+        }
+
+        async function clearBellChanges() {
+            document.getElementById('bell-panel-list').innerHTML = '<div class="notification-empty">אין שינויים</div>';
+            unreadCount = 0;
+            updateNotificationBadge();
+        }
+
+        // סגירת פאנל פעמון בלחיצה מחוץ
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('bell-panel');
+            const bell = document.getElementById('notification-bell');
+            if (panel && panel.classList.contains('active') && 
+                !panel.contains(e.target) && !bell.contains(e.target)) {
+                panel.classList.remove('active');
+            }
+        });
+
+        // === שמירת שינויים ל-Firebase ===
+        async function recordChange(action, orderSubject, orderNumber, details, changedFields) {
+            try {
+                const changeRecord = {
+                    action: action,
+                    orderSubject: orderSubject || '',
+                    orderNumber: orderNumber || '',
+                    details: details || '',
+                    changedFields: changedFields || '',
+                    user: currentUser?.username || 'לא ידוע',
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    dateStr: new Date().toISOString()
+                };
+                await db.ref('dataChanges').push(changeRecord);
+            } catch (e) {
+                console.error('Error recording change:', e);
+            }
+        }
+
+        // === מודל שינויים בלוח מנהל ===
+        let allChangesData = [];
+
+        async function showChangesModal() {
+            document.getElementById('changes-modal').classList.add('active');
+            const listEl = document.getElementById('changes-list');
+            listEl.innerHTML = '<p style="color: var(--text-secondary);">טוען שינויים...</p>';
+            
+            try {
+                const snapshot = await db.ref('dataChanges').orderByChild('timestamp').limitToLast(500).once('value');
+                const data = snapshot.val();
+                
+                if (!data) {
+                    listEl.innerHTML = '<p style="color: var(--text-secondary);">אין שינויים רשומים</p>';
+                    return;
+                }
+                
+                allChangesData = Object.keys(data).map(key => ({id: key, ...data[key]}));
+                allChangesData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                
+                // מילוי סינון משתמשים
+                const userFilter = document.getElementById('changes-user-filter');
+                const users = [...new Set(allChangesData.map(c => c.user))];
+                userFilter.innerHTML = '<option value="all">כל המשתמשים</option>';
+                users.forEach(u => {
+                    userFilter.innerHTML += `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`;
+                });
+                
+                filterChanges();
+            } catch (e) {
+                console.error('Error loading changes:', e);
+                listEl.innerHTML = '<p style="color: var(--warning);">שגיאה בטעינת שינויים</p>';
+            }
+        }
+
+        function filterChanges() {
+            const userFilter = document.getElementById('changes-user-filter').value;
+            const countFilter = document.getElementById('changes-count-filter').value;
+            const listEl = document.getElementById('changes-list');
+            
+            let filtered = allChangesData;
+            
+            if (userFilter !== 'all') {
+                filtered = filtered.filter(c => c.user === userFilter);
+            }
+            
+            if (countFilter !== 'all') {
+                filtered = filtered.slice(0, parseInt(countFilter));
+            }
+            
+            if (filtered.length === 0) {
+                listEl.innerHTML = '<p style="color: var(--text-secondary);">אין שינויים להצגה</p>';
+                return;
+            }
+
+            const actionIcons = {
+                'יצירת הזמנה': '📌',
+                'עריכת הזמנה': '✏️',
+                'מחיקת הזמנה': '🗑️',
+                'מחיקה לצמיתות': '❌',
+                'שחזור הזמנה': '♻️',
+                'שחזור מגיבוי': '🔄',
+                'שחזור מקובץ': '📂'
+            };
+            
+            listEl.innerHTML = filtered.map(c => {
+                const date = c.timestamp ? new Date(c.timestamp) : new Date(c.dateStr);
+                const dateStr = date.toLocaleDateString('he-IL');
+                const timeStr = date.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
+                const icon = actionIcons[c.action] || '🔔';
+                
+                return `
+                    <div class="change-item">
+                        <div class="change-item-header">
+                            <span class="change-item-action">${icon} ${escapeHtml(c.action)}</span>
+                            <span class="change-item-time">${dateStr} ${timeStr}</span>
+                        </div>
+                        <div class="change-item-detail">
+                            ${c.orderNumber ? `הזמנה #${escapeHtml(String(c.orderNumber))}` : ''}
+                            ${c.orderSubject ? ` - ${escapeHtml(c.orderSubject)}` : ''}
+                            ${c.changedFields ? `<br>שדות: ${escapeHtml(c.changedFields)}` : ''}
+                            ${c.details ? `<br>${escapeHtml(c.details)}` : ''}
+                        </div>
+                        <span class="change-item-user">👤 ${escapeHtml(c.user)}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function closeChangesModal() {
+            document.getElementById('changes-modal').classList.remove('active');
+        }
+
+        async function clearAllChanges() {
+            if (!confirm('האם למחוק את כל היסטוריית השינויים?')) return;
+            if (!confirm('אישור סופי - פעולה זו אינה הפיכה')) return;
+            try {
+                await db.ref('dataChanges').remove();
+                allChangesData = [];
+                document.getElementById('changes-list').innerHTML = '<p style="color: var(--text-secondary);">אין שינויים רשומים</p>';
+                alert('היסטוריית השינויים נמחקה');
+            } catch (e) {
+                alert('שגיאה: ' + e.message);
+            }
+        }
+
+        // זיהוי שינויים - פעמון וטוסט רק לשינויים מרחוק
+        function detectChanges(newData, oldData, type) {
+            if (!oldData || isFirstLoad) return;
+            
+            const newKeys = new Set(Object.keys(newData || {}));
+            const oldKeys = new Set(Object.keys(oldData || {}));
+            
+            // הזמנות חדשות שנוספו
+            for (const key of newKeys) {
+                if (!oldKeys.has(key)) {
+                    const order = newData[key];
+                    const modBy = order._lastModifiedBy || '';
+                    const label = type === 'deleted' ? 'הזמנה הועברה לנמחקות' : 'הזמנה חדשה נוספה';
+                    const userInfo = modBy ? ` (ע"י ${modBy})` : '';
+                    const isMyChange = wasModifiedByMe(key) || wasModifiedByMe('__new_order__') || wasModifiedByMe('__new_deleted__');
+                    
+                    if (!isMyChange) {
+                        addNotification();
+                        showToast('default', `🔔 ${label}`, `${order.subject || ''}${userInfo}`);
+                    }
+                }
+            }
+            
+            // הזמנות שנמחקו/הוסרו
+            for (const key of oldKeys) {
+                if (!newKeys.has(key)) {
+                    const order = oldData[key];
+                    const label = type === 'deleted' ? 'הזמנה נמחקה לצמיתות' : 'הזמנה הוסרה';
+                    const isMyChange = wasModifiedByMe(key);
+                    
+                    if (!isMyChange) {
+                        addNotification();
+                        showToast('warning', `🗑️ ${label}`, `${order.subject || ''}`);
+                    }
+                }
+            }
+            
+            // הזמנות שעודכנו
+            for (const key of newKeys) {
+                if (oldKeys.has(key)) {
+                    const newOrder = newData[key];
+                    const oldOrder = oldData[key];
+                    
+                    // השוואה ללא שדות מטא
+                    const newClean = {...newOrder};
+                    const oldClean = {...oldOrder};
+                    delete newClean._lastModifiedBy;
+                    delete newClean._lastModifiedAt;
+                    delete newClean._sessionId;
+                    delete oldClean._lastModifiedBy;
+                    delete oldClean._lastModifiedAt;
+                    delete oldClean._sessionId;
+                    
+                    if (JSON.stringify(newClean) !== JSON.stringify(oldClean)) {
+                        const modBy = newOrder._lastModifiedBy || '';
+                        const userInfo = modBy ? ` (ע"י ${modBy})` : '';
+                        const isMyChange = wasModifiedByMe(key);
+                        
+                        let changeDetails = getChangeDetails(oldOrder, newOrder);
+                        
+                        if (!isMyChange) {
+                            addNotification();
+                            showToast('default', `✏️ עדכון הזמנה`, `${newOrder.subject || ''}${userInfo}${changeDetails ? ' - ' + changeDetails : ''}`);
+                        }
+                    }
+                }
+            }
+        }
+
+        // פירוט השינויים שנעשו
+        function getChangeDetails(oldOrder, newOrder) {
+            const fieldNames = {
+                subject: 'שם לקוח',
+                orderDate: 'תאריך הזמנה',
+                courtName: 'נושא',
+                sentDate: 'תאריך שליחה',
+                amount: 'סכום',
+                paymentDate: 'שולם ע"י הלקוח',
+                paidOrganizer: 'שולם לעורך',
+                paidOrganizerDate: 'שולם לעורך בתאריך',
+                invoiceNumber: 'מס\' חשבונית',
+                transactionInvoice: 'חשבון עסקה',
+                notes: 'הערות',
+                clientNumber: 'מס\' לקוח'
+            };
+            
+            const changes = [];
+            for (const [field, label] of Object.entries(fieldNames)) {
+                const oldVal = oldOrder[field] || '';
+                const newVal = newOrder[field] || '';
+                if (String(oldVal) !== String(newVal)) {
+                    if (field === 'paidOrganizer') {
+                        changes.push(`${label}: ${newVal === 'yes' ? 'כן' : 'לא'}`);
+                    } else if (field === 'amount') {
+                        changes.push(`${label}: ₪${oldVal} → ₪${newVal}`);
+                    } else {
+                        changes.push(label);
+                    }
+                }
+            }
+            
+            return changes.length > 0 ? changes.join(', ') : '';
+        }
 
         // === נרמול שמות לקוחות ===
         function normalize(str) {
@@ -1457,12 +2410,21 @@
         }
 
         // בדיקת התחברות קיימת
-        function checkExistingLogin() {
+        async function checkExistingLogin() {
             const savedUser = localStorage.getItem('currentUser');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
                 // רק משתמשים רגילים נשמרים, לא אדמין
                 if (!currentUser.isAdmin) {
+                    // בדיקה אם משתמש הגיבוי
+                    if (currentUser.username === BACKUP_USER) {
+                        isBackupUser = true;
+                        backupConfigured = isBackupSetupDone();
+                        try {
+                            backupFolderHandle = await loadDirectoryHandle();
+                        } catch(e) { /* ignore */ }
+                    }
+                    
                     showLoading();
                     initFirebase();
                 } else {
@@ -1493,8 +2455,26 @@
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('admin-panel').style.display = 'none';
+            
+            // הצגת פעמון רק לחגי
+            const bellWrapper = document.getElementById('notification-bell-wrapper');
+            if (bellWrapper) {
+                bellWrapper.style.display = (currentUser?.username === BACKUP_USER) ? '' : 'none';
+            }
+            
             // בדיקת גיבוי אוטומטי בכל כניסה למערכת
             checkAndAutoBackup();
+            
+            // גיבוי אוטומטי למשתמש חגי
+            if (isBackupUser) {
+                if (!backupConfigured) {
+                    // פעם ראשונה - שואל על נתיב
+                    setTimeout(() => showBackupSetupModal(), 500);
+                } else {
+                    // גיבוי שקט בכניסה
+                    setTimeout(() => performSilentBackup('כניסה למערכת'), 1000);
+                }
+            }
         }
 
         function showAdminPanel() {
@@ -1530,6 +2510,18 @@
                     if (foundUser) {
                         currentUser = { username: foundUser.username, isAdmin: false };
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        
+                        // בדיקה אם זה משתמש הגיבוי
+                        if (checkIfBackupUser(username, password)) {
+                            isBackupUser = true;
+                            backupConfigured = isBackupSetupDone();
+                            
+                            // טעינת handle מ-IndexedDB אם קיים
+                            try {
+                                backupFolderHandle = await loadDirectoryHandle();
+                            } catch(e) { /* ignore */ }
+                        }
+                        
                         initFirebase();
                         return;
                     }
@@ -1636,7 +2628,17 @@
         }
 
         // התנתקות
-        function logout() {
+        async function logout() {
+            // גיבוי שקט לפני יציאה
+            if (isBackupUser && backupConfigured) {
+                await performSilentBackup('יציאה מהמערכת');
+            }
+            
+            isBackupUser = false;
+            backupConfigured = false;
+            isFirstLoad = true;
+            lastOrdersSnapshot = null;
+            lastDeletedSnapshot = null;
             currentUser = null;
             localStorage.removeItem('currentUser');
             showLogin();
@@ -1656,9 +2658,20 @@
                 // האזנה לשינויים בזמן אמת - הזמנות פעילות
                 db.ref('orders').on('value', (snapshot) => {
                     const data = snapshot.val();
+                    
+                    // זיהוי שינויים ממשתמש אחר
+                    if (lastOrdersSnapshot !== null) {
+                        detectChanges(data, lastOrdersSnapshot, 'orders');
+                    }
+                    lastOrdersSnapshot = data ? JSON.parse(JSON.stringify(data)) : {};
+                    
                     orders = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
                     renderAll();
                     showApp();
+                    
+                    if (isFirstLoad) {
+                        isFirstLoad = false;
+                    }
                 }, (error) => {
                     console.error('Firebase error:', error);
                     alert('שגיאה בהתחברות ל-Firebase: ' + error.message);
@@ -1667,6 +2680,13 @@
                 // האזנה לשינויים בזמן אמת - הזמנות שנמחקו
                 db.ref('deletedOrders').on('value', (snapshot) => {
                     const data = snapshot.val();
+                    
+                    // זיהוי שינויים ממשתמש אחר
+                    if (lastDeletedSnapshot !== null && !isFirstLoad) {
+                        detectChanges(data, lastDeletedSnapshot, 'deleted');
+                    }
+                    lastDeletedSnapshot = data ? JSON.parse(JSON.stringify(data)) : {};
+                    
                     deletedOrders = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
                     renderAll();
                 });
@@ -1852,12 +2872,14 @@
                     courtName: document.getElementById('court-name').value,
                     sentDate: document.getElementById('sent-date').value,
                     amount: parseFloat(document.getElementById('amount').value) || 0,
-                    paymentDate: document.getElementById('payment-date').value,
+                    paymentDate: document.getElementById('paid-by-client').value === 'yes' ? new Date().toISOString().split('T')[0] : '',
                     paidOrganizer: document.getElementById('paid-organizer').value,
                     paidOrganizerDate: document.getElementById('paid-organizer-date').value,
                     invoiceNumber: document.getElementById('invoice-number').value,
                     notes: document.getElementById('notes').value,
-                    createdAt: Date.now()
+                    createdAt: Date.now(),
+                    _lastModifiedBy: currentUser?.username || 'לא ידוע',
+                    _lastModifiedAt: new Date().toISOString()
                 };
 
                 try {
@@ -1868,10 +2890,13 @@
                     const newOrderNumber = currentCounter + 1;
                     
                     order.orderNumber = newOrderNumber;
+                    order._sessionId = SESSION_ID;
                     
                     // עדכון המונה ושמירת ההזמנה
                     await counterRef.set(newOrderNumber);
-                    await db.ref('orders').push(order);
+                    markAsModifiedByMe('__new_order__');
+                    const newRef = await db.ref('orders').push(order);
+                    markAsModifiedByMe(newRef.key);
                     
                     // שמירת מספר לקוח אם הוזן
                     if (order.subject && order.clientNumber) {
@@ -1880,6 +2905,7 @@
                     
                     // לוג
                     await addLog('יצירת הזמנה', `הזמנה #${order.orderNumber} - ${order.subject}`);
+                    await recordChange('יצירת הזמנה', order.subject, order.orderNumber, `סכום: ₪${order.amount || 0}`, '');
                     
                     e.target.reset();
                     setTodayAsDefault();
@@ -1901,15 +2927,19 @@
                     courtName: document.getElementById('edit-court-name').value,
                     sentDate: document.getElementById('edit-sent-date').value,
                     amount: parseFloat(document.getElementById('edit-amount').value) || 0,
-                    paymentDate: document.getElementById('edit-payment-date').value,
+                    paymentDate: document.getElementById('edit-paid-by-client').value === 'yes' ? (orders.find(o => o.id === id)?.paymentDate || new Date().toISOString().split('T')[0]) : '',
                     paidOrganizer: document.getElementById('edit-paid-organizer').value,
                     paidOrganizerDate: document.getElementById('edit-paid-organizer-date').value,
                     transactionInvoice: document.getElementById('edit-transaction-invoice').value,
                     invoiceNumber: document.getElementById('edit-invoice-number').value,
-                    notes: document.getElementById('edit-notes').value
+                    notes: document.getElementById('edit-notes').value,
+                    _lastModifiedBy: currentUser?.username || 'לא ידוע',
+                    _lastModifiedAt: new Date().toISOString(),
+                    _sessionId: SESSION_ID
                 };
 
                 try {
+                    markAsModifiedByMe(id);
                     await db.ref('orders/' + id).update(order);
                     
                     // שמירת מספר לקוח אם הוזן
@@ -1919,7 +2949,9 @@
                     
                     // לוג
                     const existingOrder = orders.find(o => o.id === id);
+                    const editChanges = existingOrder ? getChangeDetails(existingOrder, order) : '';
                     await addLog('עריכת הזמנה', `הזמנה #${existingOrder?.orderNumber || '?'} - ${order.subject}`);
+                    await recordChange('עריכת הזמנה', order.subject, existingOrder?.orderNumber || '?', '', editChanges);
                     
                     closeModal();
                 } catch (error) {
@@ -2016,7 +3048,7 @@
                             <td>${formatDate(order.sentDate)}</td>
                             <td>₪${(order.amount || 0).toLocaleString()}</td>
                             <td>${escapeHtml(order.transactionInvoice) || '-'}</td>
-                            <td>${formatDate(order.paymentDate)}</td>
+                            <td>${order.paymentDate ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
                             <td>${order.paidOrganizer === 'yes' ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
                             <td>${formatDate(order.paidOrganizerDate)}</td>
                             <td>${escapeHtml(order.invoiceNumber) || '-'}</td>
@@ -2038,7 +3070,7 @@
                             <td>${formatDate(order.orderDate)}</td>
                             <td>${escapeHtml(order.courtName) || '-'}</td>
                             <td>₪${(order.amount || 0).toLocaleString()}</td>
-                            <td>${formatDate(order.paymentDate)}</td>
+                            <td>${order.paymentDate ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
                             <td>${order.paidOrganizer === 'yes' ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
                         </tr>
                     `).join('');
@@ -2099,7 +3131,7 @@
             document.getElementById('edit-court-name').value = order.courtName || '';
             document.getElementById('edit-sent-date').value = order.sentDate || '';
             document.getElementById('edit-amount').value = order.amount || '';
-            document.getElementById('edit-payment-date').value = order.paymentDate || '';
+            document.getElementById('edit-paid-by-client').value = order.paymentDate ? 'yes' : 'no';
             document.getElementById('edit-paid-organizer').value = order.paidOrganizer || 'no';
             document.getElementById('edit-paid-organizer-date').value = order.paidOrganizerDate || '';
             document.getElementById('edit-transaction-invoice').value = order.transactionInvoice || '';
@@ -2148,8 +3180,10 @@
                 // מחיקה לצמיתות
                 try {
                     const delOrder = deletedOrders.find(o => o.id === orderId);
+                    markAsModifiedByMe(orderId);
                     await db.ref('deletedOrders/' + orderId).remove();
                     await addLog('מחיקה לצמיתות', `הזמנה #${delOrder?.orderNumber || '?'}`);
+                    await recordChange('מחיקה לצמיתות', delOrder?.subject, delOrder?.orderNumber, '', '');
                 } catch (error) {
                     alert('שגיאה במחיקה: ' + error.message);
                 }
@@ -2162,12 +3196,19 @@
                     const deletedOrder = { ...order };
                     delete deletedOrder.id;
                     deletedOrder.deletedAt = new Date().toISOString().split('T')[0];
+                    deletedOrder._lastModifiedBy = currentUser?.username || 'לא ידוע';
+                    deletedOrder._lastModifiedAt = new Date().toISOString();
+                    deletedOrder._sessionId = SESSION_ID;
                     
-                    await db.ref('deletedOrders').push(deletedOrder);
+                    markAsModifiedByMe(orderId);
+                    markAsModifiedByMe('__new_deleted__');
+                    const newDelRef = await db.ref('deletedOrders').push(deletedOrder);
+                    markAsModifiedByMe(newDelRef.key);
                     await db.ref('orders/' + orderId).remove();
                     
                     // לוג
                     await addLog('מחיקת הזמנה', `הזמנה #${order.orderNumber} - ${order.subject}`);
+                    await recordChange('מחיקת הזמנה', order.subject, order.orderNumber, '', '');
                 } catch (error) {
                     alert('שגיאה במחיקה: ' + error.message);
                 }
@@ -2186,12 +3227,15 @@
                 const restoredOrder = { ...order };
                 delete restoredOrder.id;
                 delete restoredOrder.deletedAt;
+                restoredOrder._lastModifiedBy = currentUser?.username || 'לא ידוע';
+                restoredOrder._lastModifiedAt = new Date().toISOString();
                 
                 await db.ref('orders').push(restoredOrder);
                 await db.ref('deletedOrders/' + id).remove();
                 
                 // לוג
                 await addLog('שחזור הזמנה', `הזמנה #${order.orderNumber} - ${order.subject}`);
+                await recordChange('שחזור הזמנה', order.subject, order.orderNumber, '', '');
             } catch (error) {
                 alert('שגיאה בשחזור: ' + error.message);
             }
@@ -2601,7 +3645,7 @@
             try {
                 const log = {
                     timestamp: new Date().toISOString(),
-                    user: currentUser || 'לא ידוע',
+                    user: currentUser?.username || 'לא ידוע',
                     action: action,
                     details: details
                 };
@@ -2941,6 +3985,7 @@
                 // לוג
                 const date = new Date(backup.timestamp);
                 await addLog('שחזור מגיבוי', `שוחזר מגיבוי מתאריך ${date.toLocaleDateString('he-IL')}`);
+                await recordChange('שחזור מגיבוי', '', '', `מתאריך ${date.toLocaleDateString('he-IL')}`, '');
                 
                 alert('הנתונים שוחזרו בהצלחה!');
                 closeRestoreModal();
@@ -2948,6 +3993,115 @@
             } catch (e) {
                 console.error('Error restoring backup:', e);
                 alert('שגיאה בשחזור: ' + e.message);
+            }
+        }
+
+        // === שחזור מקובץ JSON מקומי ===
+        let pendingRestoreData = null;
+
+        function handleRestoreFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+                    
+                    // בדיקת תקינות - תמיכה בשני פורמטים
+                    let backupData = null;
+                    let backupDate = '';
+                    let backupReason = '';
+                    let statsInfo = '';
+                    
+                    if (jsonData.data && jsonData.data.orders !== undefined) {
+                        // פורמט גיבוי אוטומטי (silent backup)
+                        backupData = jsonData.data;
+                        backupDate = jsonData.backupDate || '';
+                        backupReason = jsonData.reason || '';
+                        const stats = jsonData.stats || {};
+                        statsInfo = `הזמנות: ${stats.totalOrders || Object.keys(backupData.orders || {}).length}`;
+                        if (stats.totalDeleted) statsInfo += ` | נמחקות: ${stats.totalDeleted}`;
+                    } else if (jsonData.orders !== undefined) {
+                        // פורמט ישיר
+                        backupData = jsonData;
+                        backupDate = jsonData.timestamp || '';
+                    } else {
+                        alert('❌ קובץ לא תקין - לא נמצאו נתוני הזמנות');
+                        event.target.value = '';
+                        return;
+                    }
+                    
+                    pendingRestoreData = backupData;
+                    
+                    // הצגת פרטי הקובץ
+                    const infoEl = document.getElementById('restore-file-info');
+                    const detailsEl = document.getElementById('restore-file-details');
+                    
+                    let dateStr = '';
+                    if (backupDate) {
+                        const d = new Date(backupDate);
+                        dateStr = d.toLocaleDateString('he-IL') + ' ' + d.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+                    }
+                    
+                    detailsEl.innerHTML = `
+                        <p><strong>📄 קובץ:</strong> ${escapeHtml(file.name)}</p>
+                        ${dateStr ? `<p><strong>📅 תאריך גיבוי:</strong> ${dateStr}</p>` : ''}
+                        ${backupReason ? `<p><strong>📝 סיבה:</strong> ${escapeHtml(backupReason)}</p>` : ''}
+                        ${statsInfo ? `<p><strong>📊 נתונים:</strong> ${statsInfo}</p>` : ''}
+                        ${jsonData.user ? `<p><strong>👤 משתמש:</strong> ${escapeHtml(jsonData.user)}</p>` : ''}
+                    `;
+                    infoEl.style.display = 'block';
+                    
+                } catch (err) {
+                    alert('❌ שגיאה בקריאת הקובץ - ודא שזהו קובץ JSON תקין');
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function executeRestoreFromFile() {
+            if (!pendingRestoreData) {
+                alert('לא נבחר קובץ לשחזור');
+                return;
+            }
+            
+            if (!confirm('⚠️ שחזור מקובץ ימחק את כל הנתונים הנוכחיים!\n\nהאם אתה בטוח שברצונך להמשיך?')) {
+                return;
+            }
+            
+            if (!confirm('אישור סופי: האם לשחזר את הנתונים מהקובץ?')) {
+                return;
+            }
+            
+            try {
+                const data = pendingRestoreData;
+                
+                // שחזור הנתונים
+                if (data.orders !== undefined) await db.ref('orders').set(data.orders || {});
+                if (data.deletedOrders !== undefined) await db.ref('deletedOrders').set(data.deletedOrders || {});
+                if (data.clientNumbers !== undefined) await db.ref('clientNumbers').set(data.clientNumbers || {});
+                if (data.orderCounter !== undefined) await db.ref('orderCounter').set(data.orderCounter || 0);
+                
+                // שחזור גם נתוני שרת אם קיימים
+                if (data.users !== undefined) await db.ref('users').set(data.users);
+                if (data.globalClientMap !== undefined) await db.ref('globalClientMap').set(data.globalClientMap);
+                if (data.invoiceCounter !== undefined) await db.ref('invoiceCounter').set(data.invoiceCounter);
+                
+                // לוג
+                await addLog('שחזור מקובץ', `שוחזר מקובץ גיבוי מקומי`);
+                await recordChange('שחזור מקובץ', '', '', 'שוחזר מקובץ גיבוי מקומי', '');
+                
+                alert('✅ הנתונים שוחזרו בהצלחה מהקובץ!');
+                pendingRestoreData = null;
+                document.getElementById('restore-file-input').value = '';
+                document.getElementById('restore-file-info').style.display = 'none';
+                closeRestoreModal();
+                
+            } catch (e) {
+                console.error('Error restoring from file:', e);
+                alert('שגיאה בשחזור מקובץ: ' + e.message);
             }
         }
 
@@ -3030,6 +4184,10 @@
                 closeModal();
                 closeDeleteModal();
                 closeReportDropdown();
+                // סגירת מודל גיבוי
+                document.getElementById('backup-setup-modal')?.classList.remove('active');
+                // סגירת פאנל התראות
+                document.getElementById('notification-panel')?.classList.remove('active');
             }
         });
 
@@ -3101,7 +4259,7 @@
                     });
                     break;
                 case 'byPaymentDate':
-                    title = 'דוח לפי תאריך תשלום';
+                    title = 'דוח לפי שולם ע"י הלקוח';
                     reportData.sort((a, b) => {
                         const aPaid = (a.paidOrganizer === 'yes') ? 1 : 0;
                         const bPaid = (b.paidOrganizer === 'yes') ? 1 : 0;
@@ -3268,7 +4426,7 @@
                             <th>נשלח בתאריך</th>
                             <th>סכום</th>
                             <th>חשבון עסקה</th>
-                            <th>תאריך תשלום</th>
+                            <th>שולם ע"י הלקוח</th>
                             <th>שולם לעורך המכרז</th>
                             <th>שולם לעורך בתאריך</th>
                             <th>מס' חשבונית</th>
@@ -3291,7 +4449,7 @@
                                 <td>${formatDate(order.sentDate)}</td>
                                 <td>₪${(order.amount || 0).toLocaleString()}</td>
                                 <td>${escapeHtml(order.transactionInvoice) || '-'}</td>
-                                <td>${formatDate(order.paymentDate)}</td>
+                                <td>${order.paymentDate ? 'כן' : 'לא'}</td>
                                 <td>${isPaidToOrganizer ? 'כן' : 'לא'}</td>
                                 <td>${formatDate(order.paidOrganizerDate)}</td>
                                 <td>${escapeHtml(order.invoiceNumber) || '-'}</td>
