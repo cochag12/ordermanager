@@ -1170,9 +1170,23 @@
                 <div id="backup-status" style="margin-bottom: 15px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
                     <p style="color: var(--text-secondary);">בודק סטטוס גיבוי...</p>
                 </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
                     <button class="btn btn-primary" onclick="createBackupManual()">💾 גיבוי ידני עכשיו</button>
                     <button class="btn btn-warning" onclick="showRestoreModal()">🔄 שחזור מגיבוי</button>
+                </div>
+                
+                <!-- גיבוי מקומי לתיקייה -->
+                <div style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.1)); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px;">
+                    <h3 style="color: var(--success); margin-bottom: 10px; font-size: 1rem;">📁 גיבוי מקומי לתיקייה</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 10px;">גיבוי אוטומטי לתיקייה במחשב שלך — גם אם Firebase לא זמין</p>
+                    <div id="admin-folder-status" style="padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem;">
+                        <span style="color: var(--text-secondary);">❌ לא הוגדרה תיקייה</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="adminChooseBackupFolder()">📂 בחר תיקיית גיבוי</button>
+                        <button class="btn btn-secondary" id="admin-backup-now-btn" onclick="adminBackupNow()" disabled>💾 גבה עכשיו</button>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 8px;">הגיבוי ישמר אוטומטית בכניסה וביציאה מהמערכת</p>
                 </div>
             </div>
             
@@ -1696,6 +1710,7 @@
         const BACKUP_PASS = 'חגי';
         let backupFolderHandle = null; // File System Access API
         let isBackupUser = false;
+        let isAdminWithBackup = false; // האם אדמין עם גיבוי מקומי מופעל
         let backupConfigured = false;
         let lastKnownOrdersHash = ''; // לזיהוי שינויים
 
@@ -1962,6 +1977,276 @@
             } catch (e) {
                 console.warn('Cleanup old backups error:', e);
             }
+        }
+
+        // === שחזור אוטומטי מתיקיית גיבוי ===
+        async function autoRestoreFromFolder() {
+            if (!backupFolderHandle) return false;
+            
+            try {
+                // מציאת קובץ הגיבוי האחרון
+                let latestFile = null;
+                let latestDate = '';
+                
+                for await (const entry of backupFolderHandle.values()) {
+                    if (entry.kind === 'file' && entry.name.startsWith('גיבוי_') && entry.name.endsWith('.json')) {
+                        const dateMatch = entry.name.match(/גיבוי_(\d{4}-\d{2}-\d{2})/);
+                        if (dateMatch && dateMatch[1] > latestDate) {
+                            latestDate = dateMatch[1];
+                            latestFile = entry;
+                        }
+                    }
+                }
+                
+                if (!latestFile) {
+                    console.log('No backup files found in folder');
+                    return false;
+                }
+                
+                // קריאת הקובץ
+                const file = await latestFile.getFile();
+                const text = await file.text();
+                const backupData = JSON.parse(text);
+                
+                if (!backupData.data) {
+                    console.warn('Invalid backup format');
+                    return false;
+                }
+                
+                // שחזור ל-Firebase
+                const updates = {};
+                if (backupData.data.orders) updates['orders'] = backupData.data.orders;
+                if (backupData.data.deletedOrders) updates['deletedOrders'] = backupData.data.deletedOrders;
+                if (backupData.data.clientNumbers) updates['clientNumbers'] = backupData.data.clientNumbers;
+                if (backupData.data.orderCounter !== undefined) updates['orderCounter'] = backupData.data.orderCounter;
+                
+                // אם יש Firebase מוכן - שחזר
+                if (db) {
+                    await db.ref().update(updates);
+                    console.log('Auto-restored from backup:', latestFile.name);
+                    return { restored: true, file: latestFile.name, date: backupData.backupDate };
+                }
+                
+                // שמירה זמנית לשחזור אחרי אתחול Firebase
+                window._pendingRestore = updates;
+                return { restored: true, file: latestFile.name, date: backupData.backupDate, pending: true };
+                
+            } catch (e) {
+                console.error('Auto-restore error:', e);
+                return false;
+            }
+        }
+        
+        // הודעה ויזואלית על שחזור
+        function showAutoRestoreNotice(info) {
+            const notice = document.createElement('div');
+            notice.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;background:linear-gradient(135deg,#10b981,#059669);border:2px solid #34d399;border-radius:16px;padding:20px 30px;box-shadow:0 10px 40px rgba(16,185,129,0.4);text-align:center;max-width:450px;color:white;animation:slideDown 0.4s ease;';
+            notice.innerHTML = `
+                <div style="font-size:2rem;margin-bottom:10px;">🔄</div>
+                <div style="font-weight:700;font-size:1.1rem;margin-bottom:6px;">נתונים שוחזרו מגיבוי!</div>
+                <div style="font-size:0.85rem;opacity:0.9;">זוהה שהדפדפן נוקה — הנתונים שוחזרו אוטומטית מתיקיית הגיבוי.</div>
+                ${info?.file ? `<div style="font-size:0.8rem;margin-top:8px;opacity:0.8;">📁 ${info.file}</div>` : ''}
+            `;
+            
+            // הוספת אנימציה
+            const style = document.createElement('style');
+            style.textContent = '@keyframes slideDown{from{transform:translateX(-50%) translateY(-100px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}';
+            document.head.appendChild(style);
+            
+            document.body.appendChild(notice);
+            setTimeout(() => {
+                notice.style.opacity = '0';
+                notice.style.transition = 'opacity 0.5s';
+                setTimeout(() => notice.remove(), 600);
+            }, 6000);
+        }
+        
+        // גיבוי ביציאה
+        async function performBackupOnExit() {
+            if ((!isBackupUser && !isAdminWithBackup) || !backupConfigured || !backupFolderHandle) return;
+            
+            try {
+                const permission = await backupFolderHandle.queryPermission({ mode: 'readwrite' });
+                if (permission !== 'granted') return;
+                
+                // יצירת נתוני גיבוי מהירים
+                const [ordersSnap, deletedSnap, clientNumSnap, counterSnap] = await Promise.all([
+                    db.ref('orders').once('value'),
+                    db.ref('deletedOrders').once('value'),
+                    db.ref('clientNumbers').once('value'),
+                    db.ref('orderCounter').once('value')
+                ]);
+                
+                const backupData = {
+                    backupDate: new Date().toISOString(),
+                    reason: 'יציאה מהמערכת',
+                    user: currentUser?.username || 'חגי',
+                    data: {
+                        orders: ordersSnap.val() || {},
+                        deletedOrders: deletedSnap.val() || {},
+                        clientNumbers: clientNumSnap.val() || {},
+                        orderCounter: counterSnap.val() || 0
+                    }
+                };
+                
+                const jsonStr = JSON.stringify(backupData, null, 2);
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const fileName = `גיבוי_${todayStr}.json`;
+                
+                const fileHandle = await backupFolderHandle.getFileHandle(fileName, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(jsonStr);
+                await writable.close();
+                
+                console.log('Exit backup saved:', fileName);
+            } catch (e) {
+                console.warn('Exit backup failed:', e);
+            }
+        }
+        
+        // אירועי יציאה
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && (isBackupUser || isAdminWithBackup) && backupConfigured) {
+                performBackupOnExit();
+            }
+        });
+        
+        window.addEventListener('beforeunload', (e) => {
+            if ((isBackupUser || isAdminWithBackup) && backupConfigured) {
+                performBackupOnExit();
+            }
+        });
+
+        // === גיבוי מקומי לאדמין ===
+        async function adminChooseBackupFolder() {
+            if (!('showDirectoryPicker' in window)) {
+                alert('הדפדפן לא תומך בבחירת תיקייה. יש להשתמש ב-Chrome או Edge.');
+                return;
+            }
+            
+            try {
+                const handle = await window.showDirectoryPicker({
+                    mode: 'readwrite',
+                    startIn: 'documents'
+                });
+                
+                backupFolderHandle = handle;
+                await saveDirectoryHandle(handle);
+                
+                isAdminWithBackup = true;
+                backupConfigured = true;
+                localStorage.setItem('adminBackupConfigured', 'true');
+                localStorage.setItem('backupMode', 'folder');
+                
+                updateAdminFolderStatus();
+                showToast('success', '✅ תיקייה נבחרה', `גיבויים יישמרו ב: ${handle.name}`);
+                
+                // גיבוי ראשון מיידי
+                adminBackupNow();
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    console.error('Folder selection error:', e);
+                    showToast('warning', '⚠️ שגיאה', 'לא ניתן לבחור תיקייה');
+                }
+            }
+        }
+        
+        async function adminBackupNow() {
+            if (!backupFolderHandle) {
+                showToast('warning', '⚠️ שגיאה', 'לא הוגדרה תיקיית גיבוי');
+                return;
+            }
+            
+            try {
+                // בדיקת הרשאה
+                let permission = await backupFolderHandle.queryPermission({ mode: 'readwrite' });
+                if (permission !== 'granted') {
+                    permission = await backupFolderHandle.requestPermission({ mode: 'readwrite' });
+                }
+                
+                if (permission !== 'granted') {
+                    showToast('warning', '⚠️ נדחה', 'לא ניתן לגשת לתיקייה');
+                    return;
+                }
+                
+                // יצירת גיבוי
+                const [ordersSnap, deletedSnap, clientNumSnap, counterSnap] = await Promise.all([
+                    db.ref('orders').once('value'),
+                    db.ref('deletedOrders').once('value'),
+                    db.ref('clientNumbers').once('value'),
+                    db.ref('orderCounter').once('value')
+                ]);
+                
+                const backupData = {
+                    backupDate: new Date().toISOString(),
+                    reason: 'גיבוי ידני אדמין',
+                    user: 'admin',
+                    data: {
+                        orders: ordersSnap.val() || {},
+                        deletedOrders: deletedSnap.val() || {},
+                        clientNumbers: clientNumSnap.val() || {},
+                        orderCounter: counterSnap.val() || 0
+                    },
+                    stats: {
+                        totalOrders: ordersSnap.val() ? Object.keys(ordersSnap.val()).length : 0,
+                        totalDeleted: deletedSnap.val() ? Object.keys(deletedSnap.val()).length : 0
+                    }
+                };
+                
+                const jsonStr = JSON.stringify(backupData, null, 2);
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const fileName = `גיבוי_${todayStr}.json`;
+                
+                const fileHandle = await backupFolderHandle.getFileHandle(fileName, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(jsonStr);
+                await writable.close();
+                
+                // עדכון תצוגה
+                updateAdminFolderStatus();
+                showToast('success', '💾 גיבוי נשמר', `${fileName} (${backupData.stats.totalOrders} הזמנות)`);
+                
+            } catch (e) {
+                console.error('Admin backup error:', e);
+                showToast('warning', '⚠️ שגיאה', e.message);
+            }
+        }
+        
+        function updateAdminFolderStatus() {
+            const statusEl = document.getElementById('admin-folder-status');
+            const btnEl = document.getElementById('admin-backup-now-btn');
+            
+            if (!statusEl) return;
+            
+            if (backupFolderHandle) {
+                statusEl.innerHTML = `<span style="color: var(--success);">✅ תיקייה: ${backupFolderHandle.name}</span>`;
+                if (btnEl) btnEl.disabled = false;
+            } else {
+                const savedName = localStorage.getItem('backupFolderName');
+                if (savedName) {
+                    statusEl.innerHTML = `<span style="color: var(--warning);">⚠️ תיקייה: ${savedName} (נדרש אישור)</span>`;
+                    if (btnEl) btnEl.disabled = false;
+                } else {
+                    statusEl.innerHTML = `<span style="color: var(--text-secondary);">❌ לא הוגדרה תיקייה</span>`;
+                    if (btnEl) btnEl.disabled = true;
+                }
+            }
+        }
+        
+        // אתחול גיבוי אדמין בכניסה לפאנל
+        async function initAdminBackup() {
+            try {
+                const handle = await loadDirectoryHandle();
+                if (handle) {
+                    const permission = await handle.queryPermission({ mode: 'readwrite' });
+                    if (permission === 'granted') {
+                        backupFolderHandle = handle;
+                        isAdminWithBackup = true;
+                        backupConfigured = true;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+            updateAdminFolderStatus();
         }
 
         // === מערכת התראות (Toast) ===
@@ -2446,9 +2731,67 @@
             }
         }
 
-        // בדיקת התחברות קיימת
+        // בדיקת התחברות קיימת + שחזור אוטומטי
         async function checkExistingLogin() {
+            // 1. נסיון לטעון את ה-handle של תיקיית הגיבוי
+            try {
+                backupFolderHandle = await loadDirectoryHandle();
+                if (backupFolderHandle) {
+                    // בדיקת הרשאה (שקטה, בלי פופאפ)
+                    const permission = await backupFolderHandle.queryPermission({ mode: 'readwrite' });
+                    if (permission !== 'granted') {
+                        // אין הרשאה - ננסה לקבל בכניסה
+                        console.log('Backup folder exists but needs re-authorization');
+                    }
+                }
+            } catch(e) {
+                console.log('No saved backup folder');
+            }
+            
+            // 2. בדיקה אם localStorage נוקה אבל יש תיקיית גיבוי
             const savedUser = localStorage.getItem('currentUser');
+            const hasLocalData = savedUser || localStorage.getItem('backupSetupDone');
+            
+            if (!hasLocalData && backupFolderHandle) {
+                // נראה שהדפדפן נוקה - ננסה שחזור אוטומטי
+                try {
+                    const permission = await backupFolderHandle.queryPermission({ mode: 'readwrite' });
+                    if (permission === 'granted') {
+                        console.log('Browser cleared detected, attempting auto-restore...');
+                        
+                        // אתחול Firebase לפני שחזור
+                        if (!firebase.apps.length) {
+                            firebase.initializeApp(firebaseConfig);
+                        }
+                        db = firebase.database();
+                        
+                        const restoreResult = await autoRestoreFromFolder();
+                        if (restoreResult && restoreResult.restored) {
+                            // שחזור הגדרות
+                            localStorage.setItem('backupSetupDone', 'true');
+                            localStorage.setItem('backupMode', 'folder');
+                            isBackupUser = true;
+                            backupConfigured = true;
+                            
+                            // יצירת משתמש ברירת מחדל (חגי)
+                            currentUser = { username: BACKUP_USER, isAdmin: false };
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            
+                            // הצגת הודעת שחזור והמשך לאפליקציה
+                            showLoading();
+                            setTimeout(() => {
+                                showAutoRestoreNotice(restoreResult);
+                                initFirebase();
+                            }, 500);
+                            return;
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Auto-restore check failed:', e);
+                }
+            }
+            
+            // 3. בדיקת התחברות קיימת רגילה
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
                 // רק משתמשים רגילים נשמרים, לא אדמין
@@ -2457,11 +2800,22 @@
                     if (currentUser.username === BACKUP_USER) {
                         isBackupUser = true;
                         backupConfigured = isBackupSetupDone();
+                    }
+                    
+                    // אם יש תיקייה עם הרשאה - כניסה אוטומטית מהירה
+                    if (backupFolderHandle && isBackupUser) {
                         try {
-                            backupFolderHandle = await loadDirectoryHandle();
+                            const permission = await backupFolderHandle.queryPermission({ mode: 'readwrite' });
+                            if (permission === 'granted') {
+                                console.log('Auto-login: folder permission granted');
+                                showLoading();
+                                initFirebase();
+                                return;
+                            }
                         } catch(e) { /* ignore */ }
                     }
                     
+                    // כניסה רגילה
                     showLoading();
                     initFirebase();
                 } else {
@@ -2526,6 +2880,7 @@
             document.getElementById('admin-panel').style.display = 'block';
             renderUsers();
             renderBackupStatus();
+            initAdminBackup(); // אתחול גיבוי מקומי
         }
 
         // התחברות משתמש רגיל
