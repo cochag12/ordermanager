@@ -1334,7 +1334,7 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 31</div>
+                <div class="version">גרסה 35</div>
                 <!-- Notification Bell - only for חגי -->
                 <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
                     <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
@@ -1529,7 +1529,7 @@
                                     <th>פעולות</th>
                                     <th>מס'</th>
                                     <th>שם הלקוח</th>
-                                    <th>תאריך הזמנה</th>
+                                    <th>נשלח ללקוח</th>
                                     <th>נושא</th>
                                     <th>סכום</th>
                                     <th>חשבון עסקה</th>
@@ -1557,7 +1557,7 @@
                                     <th class="sortable" data-sort="orderNumber" data-table="not-paid">מס' <span class="sort-icon">⇅</span></th>
                                     <th class="sortable" data-sort="transactionInvoice" data-table="not-paid">חשבון עסקה <span class="sort-icon">⇅</span></th>
                                     <th class="sortable" data-sort="subject" data-table="not-paid">שם הלקוח <span class="sort-icon">⇅</span></th>
-                                    <th class="sortable" data-sort="orderDate" data-table="not-paid">תאריך הזמנה <span class="sort-icon">⇅</span></th>
+                                    <th class="sortable" data-sort="orderDate" data-table="not-paid">נשלח ללקוח <span class="sort-icon">⇅</span></th>
                                     <th class="sortable" data-sort="courtName" data-table="not-paid">נושא <span class="sort-icon">⇅</span></th>
                                     <th class="sortable" data-sort="amount" data-table="not-paid">סכום לחיוב <span class="sort-icon">⇅</span></th>
                                 </tr>
@@ -1583,7 +1583,7 @@
                                     <th>פעולות</th>
                                     <th>מס'</th>
                                     <th>שם הלקוח</th>
-                                    <th>תאריך הזמנה</th>
+                                    <th>נשלח ללקוח</th>
                                     <th>נושא</th>
                                     <th>סכום</th>
                                     <th>חשבון עסקה</th>
@@ -1612,7 +1612,7 @@
                                     <th>פעולות</th>
                                     <th>מס'</th>
                                     <th>שם הלקוח</th>
-                                    <th>תאריך הזמנה</th>
+                                    <th>נשלח ללקוח</th>
                                     <th>נושא</th>
                                     <th>סכום</th>
                                     <th>תאריך מחיקה</th>
@@ -1634,6 +1634,7 @@
                             <span class="search-icon">🔍</span>
                         </div>
                         <button type="button" class="btn btn-warning" onclick="showDuplicatesOnly()" id="btn-show-duplicates">⚠️ הצג כפילויות</button>
+                        <button type="button" class="btn btn-danger" onclick="cleanDuplicates()">🧹 נקה כפילויות</button>
                         <button type="button" class="btn btn-secondary" onclick="renderClientsTable()" style="display: none;" id="btn-show-all-clients">📋 הצג הכל</button>
                     </div>
                     
@@ -3316,31 +3317,23 @@
         // שמירת מספר לקוח - עם בדיקה אם שונה (כולל התאמה חכמה)
         async function saveClientNumber(clientName, clientNumber) {
             if (clientName && clientNumber) {
+                // בדיקה אם המספר כבר קיים לאיזשהו לקוח
+                const existingClientWithNumber = Object.entries(clientNumbers)
+                    .find(([name, num]) => num === clientNumber);
+                
+                if (existingClientWithNumber) {
+                    // המספר כבר קיים - לא ליצור לקוח חדש
+                    return;
+                }
+                
+                // בדיקה אם יש לקוח עם שם דומה (לפי נרמול)
                 const match = findClientNumber(clientName);
-                const existingNumber = match ? match.number : null;
-                
-                // אם יש מספר קיים והוא שונה - שאל את המשתמש
-                if (existingNumber && existingNumber !== clientNumber) {
-                    const matchNote = match.originalName !== clientName ? ` (זוהה כ: ${match.originalName})` : '';
-                    const update = confirm(`ללקוח "${clientName}"${matchNote} כבר יש מספר לקוח: ${existingNumber}\n\nהאם לעדכן למספר החדש: ${clientNumber}?`);
-                    if (!update) {
-                        return; // לא לעדכן
-                    }
+                if (match) {
+                    // יש כבר לקוח דומה - לא ליצור כפילות
+                    return;
                 }
                 
-                // בדיקה אם המספר כבר קיים ללקוח אחר
-                const otherClientsWithSameNumber = Object.entries(clientNumbers)
-                    .filter(([name, num]) => num === clientNumber && normalize(name) !== normalize(clientName))
-                    .map(([name]) => name);
-                
-                if (otherClientsWithSameNumber.length > 0) {
-                    const otherClientsList = otherClientsWithSameNumber.join(', ');
-                    const proceed = confirm(`⚠️ שים לב! מספר לקוח ${clientNumber} כבר קיים ללקוח/ות אחרים:\n${otherClientsList}\n\nהאם בכל זאת להשתמש באותו מספר עבור "${clientName}"?`);
-                    if (!proceed) {
-                        return; // לא לשמור
-                    }
-                }
-                
+                // לקוח חדש לגמרי - שמור
                 try {
                     await db.ref('clientNumbers/' + clientName).set(clientNumber);
                 } catch (e) {
@@ -3353,7 +3346,18 @@
         function updateClientsDatalist() {
             const datalist = document.getElementById('clients-list');
             if (datalist) {
-                datalist.innerHTML = Object.keys(clientNumbers).map(name => 
+                // סינון כפילויות - הצג רק שם אחד מכל קבוצת שמות דומים
+                const uniqueNames = [];
+                const seenNormalized = new Set();
+                Object.keys(clientNumbers).forEach(name => {
+                    const norm = normalize(name);
+                    if (!seenNormalized.has(norm)) {
+                        seenNormalized.add(norm);
+                        uniqueNames.push(name);
+                    }
+                });
+                
+                datalist.innerHTML = uniqueNames.map(name => 
                     `<option value="${escapeHtml(name)}">`
                 ).join('');
             }
@@ -3632,6 +3636,65 @@
             } catch (e) {
                 console.error('Error deleting client:', e);
                 alert('שגיאה במחיקת לקוח: ' + e.message);
+            }
+        }
+
+        // ניקוי כפילויות אוטומטי
+        async function cleanDuplicates() {
+            // איסוף כפילויות לפי מספר לקוח
+            const byNumber = {};
+            Object.entries(clientNumbers).forEach(([name, number]) => {
+                if (!byNumber[number]) byNumber[number] = [];
+                byNumber[number].push(name);
+            });
+            
+            // איסוף כפילויות לפי שם מנורמל
+            const byNormalized = {};
+            Object.entries(clientNumbers).forEach(([name, number]) => {
+                const norm = normalize(name);
+                if (!byNormalized[norm]) byNormalized[norm] = [];
+                byNormalized[norm].push({ name, number });
+            });
+            
+            // מציאת כפילויות למחיקה
+            const toDelete = [];
+            
+            // כפילויות לפי מספר
+            Object.entries(byNumber).forEach(([number, names]) => {
+                if (names.length > 1) {
+                    // השאר את הראשון, מחק את השאר
+                    names.slice(1).forEach(name => {
+                        if (!toDelete.includes(name)) toDelete.push(name);
+                    });
+                }
+            });
+            
+            // כפילויות לפי שם מנורמל
+            Object.entries(byNormalized).forEach(([norm, clients]) => {
+                if (clients.length > 1) {
+                    // השאר את הראשון, מחק את השאר
+                    clients.slice(1).forEach(c => {
+                        if (!toDelete.includes(c.name)) toDelete.push(c.name);
+                    });
+                }
+            });
+            
+            if (toDelete.length === 0) {
+                alert('✅ לא נמצאו כפילויות לניקוי!');
+                return;
+            }
+            
+            const confirmMsg = `נמצאו ${toDelete.length} כפילויות למחיקה:\n\n${toDelete.join('\n')}\n\nלהמשיך?`;
+            if (!confirm(confirmMsg)) return;
+            
+            try {
+                for (const name of toDelete) {
+                    await db.ref('clientNumbers/' + name).remove();
+                }
+                showToast('הצלחה', `נמחקו ${toDelete.length} כפילויות`, 'success');
+            } catch (e) {
+                console.error('Error cleaning duplicates:', e);
+                alert('שגיאה בניקוי כפילויות: ' + e.message);
             }
         }
 
@@ -3939,7 +4002,7 @@
                             <td>
                                 <div class="actions-cell">
                                     <button class="btn btn-edit" onclick="editOrder('${order.id}')">✏️ ערוך</button>
-                                    <button class="btn btn-invoice" onclick="generateInvoice('${order.id}')">📄 חשבון עסקה</button>
+                                    ${getInvoiceButton(order.id)}
                                     <button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>
                                 </div>
                             </td>
@@ -3966,7 +4029,7 @@
                             <td>
                                 <div class="actions-cell">
                                     <button class="btn btn-edit" onclick="editOrder('${order.id}')">✏️ ערוך</button>
-                                    <button class="btn btn-invoice" onclick="generateInvoice('${order.id}')">📄 חשבון עסקה</button>
+                                    ${getInvoiceButton(order.id)}
                                     <button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>
                                 </div>
                             </td>
@@ -3987,7 +4050,7 @@
                             <td>
                                 <div class="actions-cell">
                                     <button class="btn btn-edit" onclick="editOrder('${order.id}')">✏️ ערוך</button>
-                                    <button class="btn btn-invoice" onclick="generateInvoice('${order.id}')">📄 חשבון עסקה</button>
+                                    ${getInvoiceButton(order.id)}
                                     <button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>
                                 </div>
                             </td>
@@ -4006,7 +4069,7 @@
                             <td>
                                 <div class="actions-cell">
                                     <button class="btn btn-edit" onclick="editOrder('${order.id}')">✏️ ערוך</button>
-                                    <button class="btn btn-invoice" onclick="generateInvoice('${order.id}')">📄 חשבון עסקה</button>
+                                    ${getInvoiceButton(order.id)}
                                     <button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>
                                 </div>
                             </td>
@@ -4275,8 +4338,22 @@
             return result;
         }
 
+        // בדיקה אם להציג כפתור חשבון עסקה
+        function getInvoiceButton(orderId) {
+            if (currentUser?.username !== BACKUP_USER && !currentUser?.isAdmin) {
+                return '';
+            }
+            return `<button class="btn btn-invoice" onclick="generateInvoice('${orderId}')">📄 חשבון עסקה</button>`;
+        }
+
         // יצירת חשבון עסקה
         async function generateInvoice(orderId) {
+            // בדיקת הרשאה - רק חגי יכול ליצור חשבון עסקה
+            if (currentUser?.username !== BACKUP_USER && !currentUser?.isAdmin) {
+                alert('רק למשתמש חגי יש הרשאה ליצור חשבון עסקה');
+                return;
+            }
+            
             const order = orders.find(o => o.id === orderId);
             if (!order) {
                 alert('הזמנה לא נמצאה');
@@ -5372,7 +5449,7 @@
                             <th>מס' הזמנה</th>
                             <th>מס' לקוח</th>
                             <th>שם הלקוח</th>
-                            <th>תאריך הזמנה</th>
+                            <th>נשלח ללקוח</th>
                             <th>נושא</th>
                             <th>נשלח ללקוח</th>
                             <th>סכום</th>
