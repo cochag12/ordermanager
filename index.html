@@ -185,6 +185,22 @@
             color: var(--warning);
         }
 
+        .toast.toast-info {
+            border-color: #3b82f6;
+        }
+
+        .toast.toast-info .toast-title {
+            color: #3b82f6;
+        }
+
+        .toast.toast-success {
+            border-color: var(--success);
+        }
+
+        .toast.toast-success .toast-title {
+            color: var(--success);
+        }
+
         @keyframes toastIn {
             from { opacity: 0; transform: translateX(100px); }
             to { opacity: 1; transform: translateX(0); }
@@ -1334,7 +1350,7 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 35</div>
+                <div class="version">גרסה 36</div>
                 <!-- Notification Bell - only for חגי -->
                 <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
                     <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
@@ -1677,6 +1693,22 @@
             </div>
 
             </div>
+    </div>
+
+    <!-- Modal להתראה על הזמנות שלא נשלחו -->
+    <div class="modal-overlay" id="overdue-alert-modal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">⚠️ התראה - הזמנות ממתינות לשליחה</h3>
+                <button class="modal-close" onclick="closeOverdueAlert()">&times;</button>
+            </div>
+            <p style="margin-bottom: 1rem; color: var(--warning);">ההזמנות הבאות ממתינות יותר משבוע ועדיין לא נשלחו ללקוח:</p>
+            <div id="overdue-orders-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div>
+            <div class="form-actions" style="gap: 1rem;">
+                <button type="button" class="btn btn-primary" onclick="closeOverdueAlert()">✓ הבנתי</button>
+                <button type="button" class="btn btn-secondary" onclick="snoozeOverdueAlert()">⏰ הזכר לי בעוד 48 שעות</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal לאישור מחיקה -->
@@ -2940,6 +2972,60 @@
             document.getElementById('admin-panel').style.display = 'none';
         }
 
+        // בדיקת הזמנות שעבר שבוע ולא נשלחו ללקוח
+        function checkOverdueOrders() {
+            // בדיקה אם יש snooze פעיל
+            const snoozeUntil = localStorage.getItem('overdueAlertSnooze');
+            if (snoozeUntil && new Date().getTime() < parseInt(snoozeUntil)) {
+                return; // עדיין בתוך זמן הדחייה
+            }
+            
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            
+            // מציאת הזמנות שעבר שבוע מתאריך ההזמנה וטרם נשלחו
+            const overdueOrders = orders.filter(order => {
+                if (!order.orderDate || order.sentDate) return false;
+                const orderDate = new Date(order.orderDate);
+                return orderDate <= oneWeekAgo;
+            });
+            
+            if (overdueOrders.length === 0) return;
+            
+            // הצגת ההתראה
+            const listDiv = document.getElementById('overdue-orders-list');
+            listDiv.innerHTML = overdueOrders.map(order => {
+                const daysPassed = Math.floor((new Date() - new Date(order.orderDate)) / (1000 * 60 * 60 * 24));
+                return `
+                    <div style="background: var(--bg-secondary); padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; border-right: 3px solid var(--warning);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>${escapeHtml(order.subject)}</strong>
+                            <span style="color: var(--warning); font-size: 0.85rem;">${daysPassed} ימים</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            הזמנה #${order.orderNumber || '-'} | תאריך: ${formatDate(order.orderDate)}
+                            ${order.courtName ? ' | ' + escapeHtml(order.courtName) : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('overdue-alert-modal').classList.add('active');
+        }
+        
+        // סגירת התראה
+        function closeOverdueAlert() {
+            document.getElementById('overdue-alert-modal').classList.remove('active');
+        }
+        
+        // דחיית התראה ב-48 שעות
+        function snoozeOverdueAlert() {
+            const snoozeUntil = new Date().getTime() + (48 * 60 * 60 * 1000); // 48 שעות
+            localStorage.setItem('overdueAlertSnooze', snoozeUntil.toString());
+            closeOverdueAlert();
+            showToast('info', 'התראה נדחתה', 'תקבל תזכורת בעוד 48 שעות');
+        }
+
         let backupDoneThisSession = false;
         
         function showApp() {
@@ -2953,6 +3039,9 @@
             if (bellWrapper) {
                 bellWrapper.style.display = (currentUser?.username === BACKUP_USER) ? '' : 'none';
             }
+            
+            // בדיקת הזמנות שלא נשלחו
+            setTimeout(() => checkOverdueOrders(), 1500);
             
             // גיבוי רק פעם אחת בכניסה - לא בכל שינוי נתונים
             if (!backupDoneThisSession) {
