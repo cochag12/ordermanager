@@ -1334,7 +1334,7 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 28</div>
+                <div class="version">גרסה 30</div>
                 <!-- Notification Bell - only for חגי -->
                 <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
                     <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
@@ -1382,7 +1382,7 @@
                                 <input type="text" id="client-number" placeholder="לדוגמא: 15">
                             </div>
                             <div class="form-group">
-                                <label for="order-date">תאריך הזמנה *</label>
+                                <label for="order-date">נשלח ללקוח *</label>
                                 <input type="date" id="order-date" required>
                             </div>
                             <div class="form-group">
@@ -1390,7 +1390,7 @@
                                 <input type="text" id="court-name" placeholder="הכנס נושא">
                             </div>
                             <div class="form-group">
-                                <label for="sent-date">נשלח ללקוח בתאריך</label>
+                                <label for="sent-date">נשלח לתשלום</label>
                                 <input type="date" id="sent-date">
                             </div>
                             <div class="form-group">
@@ -1615,9 +1615,19 @@
             <div class="content" id="tab-clients">
                 <div class="card">
                     <h2 class="card-title">👥 ניהול לקוחות</h2>
-                    <div class="search-box">
-                        <input type="text" id="search-clients" placeholder="חיפוש לפי שם או מספר לקוח...">
-                        <span class="search-icon">🔍</span>
+                    <div class="search-box" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <div style="flex: 1; position: relative;">
+                            <input type="text" id="search-clients" placeholder="חיפוש לפי שם או מספר לקוח...">
+                            <span class="search-icon">🔍</span>
+                        </div>
+                        <button type="button" class="btn btn-warning" onclick="showDuplicatesOnly()" id="btn-show-duplicates">⚠️ הצג כפילויות</button>
+                        <button type="button" class="btn btn-secondary" onclick="renderClientsTable()" style="display: none;" id="btn-show-all-clients">📋 הצג הכל</button>
+                    </div>
+                    
+                    <!-- מקרא -->
+                    <div style="background: var(--bg-secondary); padding: 0.5rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                        <span>⚠️ = מספר לקוח כפול</span>
+                        <span>🔄 = שם דומה (כפילות אפשרית)</span>
                     </div>
                     
                     <!-- הוספת לקוח חדש -->
@@ -1700,7 +1710,7 @@
                         <input type="text" id="edit-client-number" placeholder="לדוגמא: 15">
                     </div>
                     <div class="form-group">
-                        <label for="edit-order-date">תאריך הזמנה *</label>
+                        <label for="edit-order-date">נשלח ללקוח *</label>
                         <input type="date" id="edit-order-date" required>
                     </div>
                     <div class="form-group">
@@ -1708,7 +1718,7 @@
                         <input type="text" id="edit-court-name" placeholder="הכנס נושא">
                     </div>
                     <div class="form-group">
-                        <label for="edit-sent-date">נשלח ללקוח בתאריך</label>
+                        <label for="edit-sent-date">נשלח לתשלום</label>
                         <input type="date" id="edit-sent-date">
                     </div>
                     <div class="form-group">
@@ -3339,6 +3349,28 @@
                 return { name, number, orderCount };
             });
             
+            // זיהוי כפילויות - לקוחות עם אותו מספר
+            const numberCounts = {};
+            clientsArray.forEach(c => {
+                numberCounts[c.number] = (numberCounts[c.number] || 0) + 1;
+            });
+            
+            // זיהוי כפילויות - שמות דומים (לפי נרמול)
+            const normalizedNames = {};
+            clientsArray.forEach(c => {
+                const norm = normalize(c.name);
+                if (!normalizedNames[norm]) normalizedNames[norm] = [];
+                normalizedNames[norm].push(c.name);
+            });
+            
+            // סימון כפילויות
+            clientsArray.forEach(c => {
+                c.isDuplicate = numberCounts[c.number] > 1;
+                const norm = normalize(c.name);
+                c.hasSimilarName = normalizedNames[norm] && normalizedNames[norm].length > 1;
+                c.similarNames = normalizedNames[norm] || [];
+            });
+            
             // סינון
             if (searchTerm) {
                 const term = searchTerm.toLowerCase();
@@ -3358,10 +3390,19 @@
             // עדכון badge
             document.getElementById('badge-clients').textContent = Object.keys(clientNumbers).length;
             
+            // איפוס כפתורים
+            const btnDuplicates = document.getElementById('btn-show-duplicates');
+            const btnShowAll = document.getElementById('btn-show-all-clients');
+            if (btnDuplicates) btnDuplicates.style.display = 'inline-block';
+            if (btnShowAll) btnShowAll.style.display = 'none';
+            
+            // ספירת כפילויות
+            const duplicateCount = clientsArray.filter(c => c.isDuplicate || c.hasSimilarName).length;
+            
             if (clientsArray.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="empty-state">
+                        <td colspan="5" class="empty-state">
                             <div class="empty-state-icon">👥</div>
                             <p>אין לקוחות להצגה</p>
                         </td>
@@ -3370,19 +3411,27 @@
                 return;
             }
             
-            tbody.innerHTML = clientsArray.map(client => `
-                <tr>
+            tbody.innerHTML = clientsArray.map(client => {
+                const duplicateWarning = client.isDuplicate ? 
+                    `<span style="color: #f59e0b; cursor: help;" title="מספר לקוח זה משויך ליותר מלקוח אחד">⚠️</span>` : '';
+                const similarWarning = client.hasSimilarName && client.similarNames.length > 1 ? 
+                    `<span style="color: #ef4444; cursor: help;" title="יש לקוחות עם שם דומה: ${client.similarNames.join(', ')}">🔄</span>` : '';
+                const rowStyle = (client.isDuplicate || client.hasSimilarName) ? 
+                    'background: rgba(245, 158, 11, 0.1);' : '';
+                
+                return `
+                <tr style="${rowStyle}">
                     <td>
                         <div class="actions-cell">
                             <button class="btn btn-edit" onclick="editClient('${escapeHtml(client.name)}')">✏️ ערוך</button>
                             <button class="btn btn-danger" onclick="deleteClient('${escapeHtml(client.name)}')">🗑️</button>
                         </div>
                     </td>
-                    <td><strong>${escapeHtml(client.number)}</strong></td>
-                    <td>${escapeHtml(client.name)}</td>
+                    <td><strong>${escapeHtml(client.number)}</strong> ${duplicateWarning}</td>
+                    <td>${escapeHtml(client.name)} ${similarWarning}</td>
                     <td>${client.orderCount}</td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         // הוספת לקוח חדש
@@ -3420,6 +3469,94 @@
                 console.error('Error adding client:', e);
                 alert('שגיאה בהוספת לקוח: ' + e.message);
             }
+        }
+
+        // הצגת כפילויות בלבד
+        function showDuplicatesOnly() {
+            const tbody = document.getElementById('table-clients');
+            if (!tbody) return;
+            
+            // המרה למערך
+            let clientsArray = Object.entries(clientNumbers).map(([name, number]) => {
+                const orderCount = orders.filter(o => {
+                    const match = findClientNumber(o.subject);
+                    return match && match.number === number;
+                }).length;
+                return { name, number, orderCount };
+            });
+            
+            // זיהוי כפילויות - לקוחות עם אותו מספר
+            const numberCounts = {};
+            clientsArray.forEach(c => {
+                numberCounts[c.number] = (numberCounts[c.number] || 0) + 1;
+            });
+            
+            // זיהוי כפילויות - שמות דומים
+            const normalizedNames = {};
+            clientsArray.forEach(c => {
+                const norm = normalize(c.name);
+                if (!normalizedNames[norm]) normalizedNames[norm] = [];
+                normalizedNames[norm].push(c.name);
+            });
+            
+            // סינון רק כפילויות
+            clientsArray = clientsArray.filter(c => {
+                const isDuplicate = numberCounts[c.number] > 1;
+                const norm = normalize(c.name);
+                const hasSimilarName = normalizedNames[norm] && normalizedNames[norm].length > 1;
+                return isDuplicate || hasSimilarName;
+            });
+            
+            // סימון כפילויות
+            clientsArray.forEach(c => {
+                c.isDuplicate = numberCounts[c.number] > 1;
+                const norm = normalize(c.name);
+                c.hasSimilarName = normalizedNames[norm] && normalizedNames[norm].length > 1;
+                c.similarNames = normalizedNames[norm] || [];
+            });
+            
+            // מיון לפי מספר לקוח
+            clientsArray.sort((a, b) => {
+                const numA = parseInt(a.number) || 0;
+                const numB = parseInt(b.number) || 0;
+                return numA - numB;
+            });
+            
+            // הצג/הסתר כפתורים
+            document.getElementById('btn-show-duplicates').style.display = 'none';
+            document.getElementById('btn-show-all-clients').style.display = 'inline-block';
+            
+            if (clientsArray.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div class="empty-state-icon">✅</div>
+                            <p>לא נמצאו כפילויות!</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = clientsArray.map(client => {
+                const duplicateWarning = client.isDuplicate ? 
+                    `<span style="color: #f59e0b; cursor: help;" title="מספר לקוח זה משויך ליותר מלקוח אחד">⚠️</span>` : '';
+                const similarWarning = client.hasSimilarName && client.similarNames.length > 1 ? 
+                    `<span style="color: #ef4444; cursor: help;" title="יש לקוחות עם שם דומה: ${client.similarNames.join(', ')}">🔄</span>` : '';
+                
+                return `
+                <tr style="background: rgba(245, 158, 11, 0.1);">
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn btn-edit" onclick="editClient('${escapeHtml(client.name)}')">✏️ ערוך</button>
+                            <button class="btn btn-danger" onclick="deleteClient('${escapeHtml(client.name)}')">🗑️ מחק</button>
+                        </div>
+                    </td>
+                    <td><strong>${escapeHtml(client.number)}</strong> ${duplicateWarning}</td>
+                    <td>${escapeHtml(client.name)} ${similarWarning}</td>
+                    <td>${client.orderCount}</td>
+                </tr>
+            `}).join('');
         }
 
         // עריכת לקוח
