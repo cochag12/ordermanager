@@ -1420,7 +1420,7 @@
                 <div class="card">
                     <div class="report-controls">
                         <div class="search-box" style="flex: 1; margin-bottom: 0;">
-                            <input type="text" id="search-all" placeholder="חיפוש לפי שם לקוח...">
+                            <input type="text" id="search-all" placeholder="חיפוש לפי שם לקוח או מס' חשבון עסקה...">
                             <span class="search-icon">🔍</span>
                         </div>
                         <div class="report-buttons">
@@ -1473,7 +1473,7 @@
                 <div class="card">
                     <h2 class="card-title">📦 הזמנות שטרם נשלחו ללקוח</h2>
                     <div class="search-box">
-                        <input type="text" id="search-not-sent" placeholder="חיפוש לפי שם לקוח...">
+                        <input type="text" id="search-not-sent" placeholder="חיפוש לפי שם לקוח או מס' חשבון עסקה...">
                         <span class="search-icon">🔍</span>
                     </div>
                     <div class="table-container">
@@ -1486,6 +1486,7 @@
                                     <th>תאריך הזמנה</th>
                                     <th>נושא</th>
                                     <th>סכום</th>
+                                    <th>חשבון עסקה</th>
                                 </tr>
                             </thead>
                             <tbody id="table-not-sent"></tbody>
@@ -1499,7 +1500,7 @@
                 <div class="card">
                     <h2 class="card-title">💰 נשלח ללקוח - טרם שולם</h2>
                     <div class="search-box">
-                        <input type="text" id="search-not-paid" placeholder="חיפוש לפי שם לקוח...">
+                        <input type="text" id="search-not-paid" placeholder="חיפוש לפי שם לקוח או מס' חשבון עסקה...">
                         <span class="search-icon">🔍</span>
                     </div>
                     <div class="table-container">
@@ -1512,6 +1513,7 @@
                                     <th>תאריך הזמנה</th>
                                     <th>נושא</th>
                                     <th>סכום לחיוב</th>
+                                    <th>חשבון עסקה</th>
                                 </tr>
                             </thead>
                             <tbody id="table-not-paid"></tbody>
@@ -1525,7 +1527,7 @@
                 <div class="card">
                     <h2 class="card-title">✅ הזמנות ששולמו</h2>
                     <div class="search-box">
-                        <input type="text" id="search-paid" placeholder="חיפוש לפי שם לקוח...">
+                        <input type="text" id="search-paid" placeholder="חיפוש לפי שם לקוח או מס' חשבון עסקה...">
                         <span class="search-icon">🔍</span>
                     </div>
                     <div class="table-container">
@@ -1553,7 +1555,7 @@
                 <div class="card">
                     <h2 class="card-title">🗑️ הזמנות שנמחקו</h2>
                     <div class="search-box">
-                        <input type="text" id="search-deleted" placeholder="חיפוש לפי שם לקוח...">
+                        <input type="text" id="search-deleted" placeholder="חיפוש לפי שם לקוח או מס' חשבון עסקה...">
                         <span class="search-icon">🔍</span>
                     </div>
                     <div class="table-container">
@@ -3149,6 +3151,19 @@
                     clientNumberInput.style.borderColor = '';
                     clientNumberInput.title = '';
                 }
+                
+                // בדיקה אם המספר כבר בשימוש על ידי לקוח אחר
+                if (newNumber) {
+                    const otherClients = Object.entries(clientNumbers)
+                        .filter(([name, num]) => num === newNumber && normalize(name) !== normalize(clientName))
+                        .map(([name]) => name);
+                    
+                    if (otherClients.length > 0) {
+                        clientNumberInput.style.borderColor = '#ef4444';
+                        clientNumberInput.title = `⚠️ מספר זה כבר בשימוש: ${otherClients.join(', ')}`;
+                        showToast('אזהרה', `מספר לקוח ${newNumber} כבר קיים ללקוח: ${otherClients.join(', ')}`, 'warning');
+                    }
+                }
             });
 
             // בטופס עריכה
@@ -3185,6 +3200,19 @@
                     editClientNumberInput.style.borderColor = '';
                     editClientNumberInput.title = '';
                 }
+                
+                // בדיקה אם המספר כבר בשימוש על ידי לקוח אחר
+                if (newNumber) {
+                    const otherClients = Object.entries(clientNumbers)
+                        .filter(([name, num]) => num === newNumber && normalize(name) !== normalize(clientName))
+                        .map(([name]) => name);
+                    
+                    if (otherClients.length > 0) {
+                        editClientNumberInput.style.borderColor = '#ef4444';
+                        editClientNumberInput.title = `⚠️ מספר זה כבר בשימוש: ${otherClients.join(', ')}`;
+                        showToast('אזהרה', `מספר לקוח ${newNumber} כבר קיים ללקוח: ${otherClients.join(', ')}`, 'warning');
+                    }
+                }
             });
         }
 
@@ -3200,6 +3228,19 @@
                     const update = confirm(`ללקוח "${clientName}"${matchNote} כבר יש מספר לקוח: ${existingNumber}\n\nהאם לעדכן למספר החדש: ${clientNumber}?`);
                     if (!update) {
                         return; // לא לעדכן
+                    }
+                }
+                
+                // בדיקה אם המספר כבר קיים ללקוח אחר
+                const otherClientsWithSameNumber = Object.entries(clientNumbers)
+                    .filter(([name, num]) => num === clientNumber && normalize(name) !== normalize(clientName))
+                    .map(([name]) => name);
+                
+                if (otherClientsWithSameNumber.length > 0) {
+                    const otherClientsList = otherClientsWithSameNumber.join(', ');
+                    const proceed = confirm(`⚠️ שים לב! מספר לקוח ${clientNumber} כבר קיים ללקוח/ות אחרים:\n${otherClientsList}\n\nהאם בכל זאת להשתמש באותו מספר עבור "${clientName}"?`);
+                    if (!proceed) {
+                        return; // לא לשמור
                     }
                 }
                 
@@ -3386,7 +3427,8 @@
             if (searchTerm) {
                 filteredOrders = filteredOrders.filter(o => 
                     o.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (o.courtName && o.courtName.toLowerCase().includes(searchTerm.toLowerCase()))
+                    (o.courtName && o.courtName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                    (o.transactionInvoice && o.transactionInvoice.toLowerCase().includes(searchTerm.toLowerCase()))
                 );
             }
 
@@ -3405,7 +3447,7 @@
             const tbody = document.getElementById(`table-${type}`);
             
             if (filteredOrders.length === 0) {
-                const colSpan = type === 'all' ? 13 : (type === 'deleted' ? 7 : (type === 'paid' ? 8 : 6));
+                const colSpan = type === 'all' ? 13 : (type === 'deleted' ? 7 : (type === 'paid' ? 8 : 7));
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="${colSpan}" class="empty-state">
@@ -3496,6 +3538,7 @@
                             <td>${formatDate(order.orderDate)}</td>
                             <td>${escapeHtml(order.courtName) || '-'}</td>
                             <td>₪${(order.amount || 0).toLocaleString()}</td>
+                            <td>${escapeHtml(order.transactionInvoice) || '-'}</td>
                         </tr>
                     `).join('');
             }
@@ -3776,19 +3819,23 @@
             if (order.transactionInvoice) {
                 invoiceNumber = order.transactionInvoice;
             } else {
-                // יצירת מספר חשבון עסקה חדש
+                // יצירת מספר חשבון עסקה חדש - מבוסס על המספר הגבוה ביותר הקיים
                 const year = new Date().getFullYear().toString().slice(-2);
-                const counterKey = `invoiceCounter_${clientNumber}_${year}`;
                 
-                let invoiceSeq = 1;
-                try {
-                    const snapshot = await db.ref('counters/' + counterKey).once('value');
-                    invoiceSeq = (snapshot.val() || 0) + 1;
-                    await db.ref('counters/' + counterKey).set(invoiceSeq);
-                } catch (e) {
-                    console.error('Error getting invoice counter:', e);
-                }
-
+                // מציאת המספר הגבוה ביותר שקיים ללקוח הזה השנה
+                let maxSeq = 0;
+                orders.forEach(o => {
+                    if (!o.transactionInvoice) return;
+                    // בדיקה אם החשבונית שייכת לאותו לקוח ואותה שנה
+                    const invoiceMatch = o.transactionInvoice.match(/^(\d+)\/(\d+)\.(\d+)$/);
+                    if (!invoiceMatch) return;
+                    if (invoiceMatch[1] === clientNumber && invoiceMatch[2] === year) {
+                        const seq = parseInt(invoiceMatch[3], 10);
+                        if (seq > maxSeq) maxSeq = seq;
+                    }
+                });
+                
+                const invoiceSeq = maxSeq + 1;
                 invoiceNumber = `${clientNumber}/${year}.${invoiceSeq.toString().padStart(2, '0')}`;
                 
                 // שמירת מספר חשבון העסקה בהזמנה
@@ -3797,6 +3844,8 @@
                     order.transactionInvoice = invoiceNumber;
                 } catch (e) {
                     console.error('Error saving transaction invoice number:', e);
+                    alert('שגיאה בשמירת מספר חשבון העסקה');
+                    return;
                 }
             }
             
