@@ -1350,7 +1350,7 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 37</div>
+                <div class="version">גרסה 38</div>
                 <!-- Notification Bell - only for חגי -->
                 <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
                     <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
@@ -2206,7 +2206,7 @@
             }, 6000);
         }
         
-        // גיבוי ביציאה
+        // גיבוי ביציאה (סינכרוני ככל האפשר)
         async function performBackupOnExit() {
             if ((!isBackupUser && !isAdminWithBackup) || !backupConfigured || !backupFolderHandle) return;
             
@@ -2224,7 +2224,7 @@
                 
                 const backupData = {
                     backupDate: new Date().toISOString(),
-                    reason: 'יציאה מהמערכת',
+                    reason: 'יציאה/סגירת דפדפן',
                     user: currentUser?.username || 'חגי',
                     data: {
                         orders: ordersSnap.val() || {},
@@ -2249,7 +2249,7 @@
             }
         }
         
-        // אירועי יציאה
+        // אירועי יציאה - גיבוי בסגירת דפדפן
         window.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden' && (isBackupUser || isAdminWithBackup) && backupConfigured) {
                 performBackupOnExit();
@@ -2257,6 +2257,12 @@
         });
         
         window.addEventListener('beforeunload', (e) => {
+            if ((isBackupUser || isAdminWithBackup) && backupConfigured) {
+                performBackupOnExit();
+            }
+        });
+        
+        window.addEventListener('pagehide', (e) => {
             if ((isBackupUser || isAdminWithBackup) && backupConfigured) {
                 performBackupOnExit();
             }
@@ -3880,6 +3886,11 @@
                     e.target.reset();
                     setTodayAsDefault();
                     alert('ההזמנה נשמרה בהצלחה!');
+                    
+                    // גיבוי שקט אחרי הוספת הזמנה
+                    if (isBackupUser && backupConfigured) {
+                        setTimeout(() => performSilentBackup('הוספת הזמנה חדשה'), 500);
+                    }
                 } catch (error) {
                     alert('שגיאה בשמירה: ' + error.message);
                 }
