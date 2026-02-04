@@ -1334,7 +1334,7 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 26</div>
+                <div class="version">גרסה 27</div>
                 <!-- Notification Bell - only for חגי -->
                 <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
                     <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
@@ -1361,6 +1361,7 @@
                 <button class="tab" data-tab="not-paid">💰 טרם שולם <span class="badge" id="badge-not-paid">0</span></button>
                 <button class="tab" data-tab="paid">✅ שולמו <span class="badge" id="badge-paid">0</span></button>
                 <button class="tab" data-tab="deleted">🗑️ נמחקו <span class="badge" id="badge-deleted">0</span></button>
+                <button class="tab" data-tab="clients">👥 לקוחות <span class="badge" id="badge-clients">0</span></button>
             </div>
 
             <button class="btn btn-secondary logout-btn" onclick="logout()">🚪 התנתק</button>
@@ -1605,6 +1606,47 @@
                                 </tr>
                             </thead>
                             <tbody id="table-deleted"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ניהול לקוחות -->
+            <div class="content" id="tab-clients">
+                <div class="card">
+                    <h2 class="card-title">👥 ניהול לקוחות</h2>
+                    <div class="search-box">
+                        <input type="text" id="search-clients" placeholder="חיפוש לפי שם או מספר לקוח...">
+                        <span class="search-icon">🔍</span>
+                    </div>
+                    
+                    <!-- הוספת לקוח חדש -->
+                    <div style="background: var(--card-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border-color);">
+                        <h3 style="margin-bottom: 1rem; color: var(--accent);">➕ הוספת לקוח חדש</h3>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                            <div class="form-group" style="flex: 2; min-width: 200px;">
+                                <label for="new-client-name">שם הלקוח</label>
+                                <input type="text" id="new-client-name" placeholder="לדוגמה: מועצ״ד גן יבנה">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 100px;">
+                                <label for="new-client-number">מספר לקוח</label>
+                                <input type="text" id="new-client-number" placeholder="לדוגמה: 15">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="addNewClient()" style="height: fit-content;">➕ הוסף</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>פעולות</th>
+                                    <th class="sortable" data-sort="number" data-table="clients">מס' לקוח <span class="sort-icon">⇅</span></th>
+                                    <th class="sortable" data-sort="name" data-table="clients">שם הלקוח <span class="sort-icon">⇅</span></th>
+                                    <th>מס' הזמנות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-clients"></tbody>
                         </table>
                     </div>
                 </div>
@@ -2727,28 +2769,13 @@
                     return { number, originalName: name };
                 }
                 
-                // התאמה לפי סוג ארגון + מקום
+                // התאמה לפי סוג ארגון + מקום (רק אם שניהם מאותו סוג)
                 const org2 = getOrgType(name);
                 const place2 = getPlace(name);
                 
+                // רק אם שניהם מועצה דתית או שניהם חברה קדישא - והמקום זהה
                 if (org1 && org1 === org2 && place1.length >= 3 && place1 === place2) {
                     return { number, originalName: name };
-                }
-                
-                // חברה קדישא + אותו מקום
-                if (n1.includes('חברהקדישא') && n2.includes('חברהקדישא')) {
-                    const p1 = n1.replace(/חברהקדישא/g, '');
-                    const p2 = n2.replace(/חברהקדישא/g, '');
-                    if (p1.length >= 3 && (p1.includes(p2) || p2.includes(p1))) {
-                        return { number, originalName: name };
-                    }
-                }
-                
-                // התאמה חלקית כללית
-                if (n1.length >= 6 && n2.length >= 6) {
-                    if (n1.includes(n2) || n2.includes(n1)) {
-                        return { number, originalName: name };
-                    }
                 }
             }
             return null;
@@ -3294,6 +3321,155 @@
                     `<option value="${escapeHtml(name)}">`
                 ).join('');
             }
+            // עדכון טבלת לקוחות אם קיימת
+            renderClientsTable();
+        }
+
+        // רינדור טבלת לקוחות
+        function renderClientsTable(searchTerm = '') {
+            const tbody = document.getElementById('table-clients');
+            if (!tbody) return;
+            
+            // המרה למערך עם ספירת הזמנות
+            let clientsArray = Object.entries(clientNumbers).map(([name, number]) => {
+                const orderCount = orders.filter(o => {
+                    const match = findClientNumber(o.subject);
+                    return match && match.number === number;
+                }).length;
+                return { name, number, orderCount };
+            });
+            
+            // סינון
+            if (searchTerm) {
+                const term = searchTerm.toLowerCase();
+                clientsArray = clientsArray.filter(c => 
+                    c.name.toLowerCase().includes(term) || 
+                    c.number.toString().includes(term)
+                );
+            }
+            
+            // מיון לפי מספר לקוח
+            clientsArray.sort((a, b) => {
+                const numA = parseInt(a.number) || 0;
+                const numB = parseInt(b.number) || 0;
+                return numA - numB;
+            });
+            
+            // עדכון badge
+            document.getElementById('badge-clients').textContent = Object.keys(clientNumbers).length;
+            
+            if (clientsArray.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <div class="empty-state-icon">👥</div>
+                            <p>אין לקוחות להצגה</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = clientsArray.map(client => `
+                <tr>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn btn-edit" onclick="editClient('${escapeHtml(client.name)}')">✏️ ערוך</button>
+                            <button class="btn btn-danger" onclick="deleteClient('${escapeHtml(client.name)}')">🗑️</button>
+                        </div>
+                    </td>
+                    <td><strong>${escapeHtml(client.number)}</strong></td>
+                    <td>${escapeHtml(client.name)}</td>
+                    <td>${client.orderCount}</td>
+                </tr>
+            `).join('');
+        }
+
+        // הוספת לקוח חדש
+        async function addNewClient() {
+            const nameInput = document.getElementById('new-client-name');
+            const numberInput = document.getElementById('new-client-number');
+            
+            const name = nameInput.value.trim();
+            const number = numberInput.value.trim();
+            
+            if (!name || !number) {
+                alert('יש להזין שם לקוח ומספר');
+                return;
+            }
+            
+            // בדיקה אם השם כבר קיים
+            if (clientNumbers[name]) {
+                alert(`לקוח בשם "${name}" כבר קיים עם מספר ${clientNumbers[name]}`);
+                return;
+            }
+            
+            // בדיקה אם המספר כבר בשימוש
+            const existingWithNumber = Object.entries(clientNumbers).find(([n, num]) => num === number);
+            if (existingWithNumber) {
+                const proceed = confirm(`מספר ${number} כבר בשימוש עבור "${existingWithNumber[0]}". להמשיך בכל זאת?`);
+                if (!proceed) return;
+            }
+            
+            try {
+                await db.ref('clientNumbers/' + name).set(number);
+                nameInput.value = '';
+                numberInput.value = '';
+                showToast('הצלחה', `לקוח "${name}" נוסף בהצלחה`, 'success');
+            } catch (e) {
+                console.error('Error adding client:', e);
+                alert('שגיאה בהוספת לקוח: ' + e.message);
+            }
+        }
+
+        // עריכת לקוח
+        async function editClient(oldName) {
+            const currentNumber = clientNumbers[oldName];
+            const newName = prompt('שם הלקוח:', oldName);
+            if (newName === null) return;
+            
+            const newNumber = prompt('מספר לקוח:', currentNumber);
+            if (newNumber === null) return;
+            
+            if (!newName.trim() || !newNumber.trim()) {
+                alert('יש להזין שם ומספר');
+                return;
+            }
+            
+            try {
+                // אם השם השתנה - מחק את הישן והוסף חדש
+                if (newName !== oldName) {
+                    await db.ref('clientNumbers/' + oldName).remove();
+                }
+                await db.ref('clientNumbers/' + newName.trim()).set(newNumber.trim());
+                showToast('הצלחה', 'פרטי הלקוח עודכנו', 'success');
+            } catch (e) {
+                console.error('Error editing client:', e);
+                alert('שגיאה בעדכון לקוח: ' + e.message);
+            }
+        }
+
+        // מחיקת לקוח
+        async function deleteClient(name) {
+            const orderCount = orders.filter(o => {
+                const match = findClientNumber(o.subject);
+                return match && match.originalName === name;
+            }).length;
+            
+            let message = `האם למחוק את הלקוח "${name}"?`;
+            if (orderCount > 0) {
+                message += `\n\nשים לב: ללקוח זה יש ${orderCount} הזמנות. המחיקה תסיר רק את הלקוח מהרשימה, לא את ההזמנות.`;
+            }
+            
+            if (!confirm(message)) return;
+            
+            try {
+                await db.ref('clientNumbers/' + name).remove();
+                showToast('הצלחה', `לקוח "${name}" נמחק`, 'success');
+            } catch (e) {
+                console.error('Error deleting client:', e);
+                alert('שגיאה במחיקת לקוח: ' + e.message);
+            }
         }
 
         function setTodayAsDefault() {
@@ -3329,6 +3505,9 @@
             });
             document.getElementById('search-deleted').addEventListener('input', (e) => {
                 renderTable('deleted', e.target.value);
+            });
+            document.getElementById('search-clients').addEventListener('input', (e) => {
+                renderClientsTable(e.target.value);
             });
         }
 
