@@ -1334,7 +1334,7 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 30</div>
+                <div class="version">גרסה 31</div>
                 <!-- Notification Bell - only for חגי -->
                 <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
                     <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
@@ -1382,16 +1382,27 @@
                                 <input type="text" id="client-number" placeholder="לדוגמא: 15">
                             </div>
                             <div class="form-group">
-                                <label for="order-date">נשלח ללקוח *</label>
+                                <label for="order-date">תאריך הזמנה *</label>
                                 <input type="date" id="order-date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="status">סטטוס</label>
+                                <select id="status">
+                                    <option value="draft" selected>טיוטה</option>
+                                    <option value="final">סופי</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label for="court-name">נושא</label>
                                 <input type="text" id="court-name" placeholder="הכנס נושא">
                             </div>
                             <div class="form-group">
-                                <label for="sent-date">נשלח לתשלום</label>
+                                <label for="sent-date">נשלח ללקוח</label>
                                 <input type="date" id="sent-date">
+                            </div>
+                            <div class="form-group">
+                                <label for="sent-payment-date">נשלח לתשלום</label>
+                                <input type="date" id="sent-payment-date">
                             </div>
                             <div class="form-group">
                                 <label for="amount">סכום לחיוב (₪)</label>
@@ -1484,8 +1495,10 @@
                                     <th>מס' לקוח</th>
                                     <th>שם הלקוח</th>
                                     <th>תאריך הזמנה</th>
+                                    <th>סטטוס</th>
                                     <th>נושא</th>
-                                    <th>נשלח בתאריך</th>
+                                    <th>נשלח ללקוח</th>
+                                    <th>נשלח לתשלום</th>
                                     <th>סכום</th>
                                     <th>חשבון עסקה</th>
                                     <th>שולם ע"י הלקוח</th>
@@ -1710,16 +1723,27 @@
                         <input type="text" id="edit-client-number" placeholder="לדוגמא: 15">
                     </div>
                     <div class="form-group">
-                        <label for="edit-order-date">נשלח ללקוח *</label>
+                        <label for="edit-order-date">תאריך הזמנה *</label>
                         <input type="date" id="edit-order-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-status">סטטוס</label>
+                        <select id="edit-status">
+                            <option value="draft">טיוטה</option>
+                            <option value="final">סופי</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="edit-court-name">נושא</label>
                         <input type="text" id="edit-court-name" placeholder="הכנס נושא">
                     </div>
                     <div class="form-group">
-                        <label for="edit-sent-date">נשלח לתשלום</label>
+                        <label for="edit-sent-date">נשלח ללקוח</label>
                         <input type="date" id="edit-sent-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-sent-payment-date">נשלח לתשלום</label>
+                        <input type="date" id="edit-sent-payment-date">
                     </div>
                     <div class="form-group">
                         <label for="edit-amount">סכום לחיוב (₪)</label>
@@ -2670,8 +2694,10 @@
             const fieldNames = {
                 subject: 'שם לקוח',
                 orderDate: 'תאריך הזמנה',
+                status: 'סטטוס',
                 courtName: 'נושא',
-                sentDate: 'תאריך שליחה',
+                sentDate: 'נשלח ללקוח',
+                sentPaymentDate: 'נשלח לתשלום',
                 amount: 'סכום',
                 paymentDate: 'שולם ע"י הלקוח',
                 paidOrganizer: 'שולם לעורך',
@@ -3658,8 +3684,10 @@
                     subject: document.getElementById('subject').value,
                     clientNumber: document.getElementById('client-number').value,
                     orderDate: document.getElementById('order-date').value,
+                    status: document.getElementById('status').value,
                     courtName: document.getElementById('court-name').value,
                     sentDate: document.getElementById('sent-date').value,
+                    sentPaymentDate: document.getElementById('sent-payment-date').value,
                     amount: parseFloat(document.getElementById('amount').value) || 0,
                     paymentDate: document.getElementById('paid-by-client').value === 'yes' ? new Date().toISOString().split('T')[0] : '',
                     paidOrganizer: document.getElementById('paid-organizer').value,
@@ -3713,8 +3741,10 @@
                     subject: document.getElementById('edit-subject').value,
                     clientNumber: document.getElementById('edit-client-number').value,
                     orderDate: document.getElementById('edit-order-date').value,
+                    status: document.getElementById('edit-status').value,
                     courtName: document.getElementById('edit-court-name').value,
                     sentDate: document.getElementById('edit-sent-date').value,
+                    sentPaymentDate: document.getElementById('edit-sent-payment-date').value,
                     amount: parseFloat(document.getElementById('edit-amount').value) || 0,
                     paymentDate: document.getElementById('edit-paid-by-client').value === 'yes' ? (orders.find(o => o.id === id)?.paymentDate || new Date().toISOString().split('T')[0]) : '',
                     paidOrganizer: document.getElementById('edit-paid-organizer').value,
@@ -3870,7 +3900,7 @@
             const tbody = document.getElementById(`table-${type}`);
             
             if (filteredOrders.length === 0) {
-                const colSpan = type === 'all' ? 13 : (type === 'deleted' ? 7 : (type === 'paid' ? 9 : 7));
+                const colSpan = type === 'all' ? 16 : (type === 'deleted' ? 7 : (type === 'paid' ? 9 : 7));
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="${colSpan}" class="empty-state">
@@ -3903,6 +3933,7 @@
                 tbody.innerHTML = filteredOrders.map(order => {
                     const match = findClientNumber(order.subject);
                     const clientNum = match ? match.number : (order.clientNumber || '-');
+                    const statusText = order.status === 'final' ? '<span class="status status-yes"><span class="status-dot"></span>סופי</span>' : '<span class="status status-no"><span class="status-dot"></span>טיוטה</span>';
                     return `
                         <tr class="${order.paymentDate ? 'paid-row' : ''}">
                             <td>
@@ -3916,8 +3947,10 @@
                             <td>${escapeHtml(clientNum)}</td>
                             <td><strong>${escapeHtml(order.subject)}</strong></td>
                             <td>${formatDate(order.orderDate)}</td>
+                            <td>${statusText}</td>
                             <td>${escapeHtml(order.courtName) || '-'}</td>
                             <td>${formatDate(order.sentDate)}</td>
+                            <td>${formatDate(order.sentPaymentDate)}</td>
                             <td>₪${(order.amount || 0).toLocaleString()}</td>
                             <td>${escapeHtml(order.transactionInvoice) || '-'}</td>
                             <td>${order.paymentDate ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
@@ -4022,8 +4055,10 @@
             const clientNum = match ? match.number : (order.clientNumber || '');
             document.getElementById('edit-client-number').value = clientNum;
             document.getElementById('edit-order-date').value = order.orderDate;
+            document.getElementById('edit-status').value = order.status || 'draft';
             document.getElementById('edit-court-name').value = order.courtName || '';
             document.getElementById('edit-sent-date').value = order.sentDate || '';
+            document.getElementById('edit-sent-payment-date').value = order.sentPaymentDate || '';
             document.getElementById('edit-amount').value = order.amount || '';
             document.getElementById('edit-paid-by-client').value = order.paymentDate ? 'yes' : 'no';
             document.getElementById('edit-paid-organizer').value = order.paidOrganizer || 'no';
@@ -5339,7 +5374,7 @@
                             <th>שם הלקוח</th>
                             <th>תאריך הזמנה</th>
                             <th>נושא</th>
-                            <th>נשלח בתאריך</th>
+                            <th>נשלח ללקוח</th>
                             <th>סכום</th>
                             <th>חשבון עסקה</th>
                             <th>שולם ע"י הלקוח</th>
