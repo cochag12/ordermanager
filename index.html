@@ -1433,6 +1433,7 @@
                                     <button onclick="generateReport('bySentDate')">לפי תאריך שליחה</button>
                                     <button onclick="generateReport('byPaymentDate')">לפי שולם ע"י הלקוח</button>
                                     <button onclick="generateReport('byAmount')">לפי סכום</button>
+                                    <button onclick="generateReport('byTransactionInvoice')">לפי חשבון עסקה</button>
                                     <button onclick="generateReport('paidOnly')">✅ שולמו בלבד</button>
                                 </div>
                             </div>
@@ -1540,6 +1541,7 @@
                                     <th>תאריך הזמנה</th>
                                     <th>נושא</th>
                                     <th>סכום</th>
+                                    <th>חשבון עסקה</th>
                                     <th>שולם ע"י הלקוח</th>
                                     <th>שולם לעורך</th>
                                 </tr>
@@ -3447,7 +3449,7 @@
             const tbody = document.getElementById(`table-${type}`);
             
             if (filteredOrders.length === 0) {
-                const colSpan = type === 'all' ? 13 : (type === 'deleted' ? 7 : (type === 'paid' ? 8 : 7));
+                const colSpan = type === 'all' ? 13 : (type === 'deleted' ? 7 : (type === 'paid' ? 9 : 7));
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="${colSpan}" class="empty-state">
@@ -3519,6 +3521,7 @@
                             <td>${formatDate(order.orderDate)}</td>
                             <td>${escapeHtml(order.courtName) || '-'}</td>
                             <td>₪${(order.amount || 0).toLocaleString()}</td>
+                            <td>${escapeHtml(order.transactionInvoice) || '-'}</td>
                             <td>${order.paymentDate ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
                             <td>${order.paidOrganizer === 'yes' ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
                         </tr>
@@ -3849,13 +3852,15 @@
                 }
             }
             
-            // עדכון תאריך שליחה להיום
-            const todayDate = new Date().toISOString().split('T')[0];
-            try {
-                await db.ref('orders/' + orderId + '/sentDate').set(todayDate);
-                order.sentDate = todayDate;
-            } catch (e) {
-                console.error('Error saving sent date:', e);
+            // עדכון תאריך שליחה להיום - רק אם אין עדיין תאריך שליחה
+            if (!order.sentDate) {
+                const todayDate = new Date().toISOString().split('T')[0];
+                try {
+                    await db.ref('orders/' + orderId + '/sentDate').set(todayDate);
+                    order.sentDate = todayDate;
+                } catch (e) {
+                    console.error('Error saving sent date:', e);
+                }
             }
             // הסכום שמוזן הוא כולל מע"מ - מחשבים אחורה
             const total = order.amount || 0;
@@ -4732,6 +4737,17 @@
                         const bPaid = (b.paidOrganizer === 'yes') ? 1 : 0;
                         if (aPaid !== bPaid) return aPaid - bPaid;
                         return (b.amount || 0) - (a.amount || 0);
+                    });
+                    break;
+                case 'byTransactionInvoice':
+                    title = 'דוח לפי חשבון עסקה';
+                    reportData.sort((a, b) => {
+                        const aPaid = (a.paidOrganizer === 'yes') ? 1 : 0;
+                        const bPaid = (b.paidOrganizer === 'yes') ? 1 : 0;
+                        if (aPaid !== bPaid) return aPaid - bPaid;
+                        if (!a.transactionInvoice) return 1;
+                        if (!b.transactionInvoice) return -1;
+                        return a.transactionInvoice.localeCompare(b.transactionInvoice);
                     });
                     break;
                 case 'paidOnly':
