@@ -1350,7 +1350,7 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 36</div>
+                <div class="version">גרסה 37</div>
                 <!-- Notification Bell - only for חגי -->
                 <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
                     <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
@@ -1603,6 +1603,7 @@
                                     <th>נושא</th>
                                     <th>סכום</th>
                                     <th>חשבון עסקה</th>
+                                    <th>מס' חשבונית</th>
                                     <th>שולם ע"י הלקוח</th>
                                     <th>שולם לעורך</th>
                                 </tr>
@@ -4052,7 +4053,7 @@
             const tbody = document.getElementById(`table-${type}`);
             
             if (filteredOrders.length === 0) {
-                const colSpan = type === 'all' ? 16 : (type === 'deleted' ? 7 : (type === 'paid' ? 9 : 7));
+                const colSpan = type === 'all' ? 16 : (type === 'deleted' ? 7 : (type === 'paid' ? 10 : 7));
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="${colSpan}" class="empty-state">
@@ -4128,6 +4129,7 @@
                             <td>${escapeHtml(order.courtName) || '-'}</td>
                             <td>₪${(order.amount || 0).toLocaleString()}</td>
                             <td>${escapeHtml(order.transactionInvoice) || '-'}</td>
+                            <td>${escapeHtml(order.invoiceNumber) || '-'}</td>
                             <td>${order.paymentDate ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
                             <td>${order.paidOrganizer === 'yes' ? '<span class="status status-yes"><span class="status-dot"></span>כן</span>' : '<span class="status status-no"><span class="status-dot"></span>לא</span>'}</td>
                         </tr>
