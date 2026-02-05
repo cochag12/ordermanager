@@ -721,6 +721,26 @@
         }
         
         /* כפתורי גלילה קבועים */
+        
+        /* טבלת לקוחות - ללא גלילה אופקית */
+        .clients-table {
+            min-width: unset !important;
+            width: 100%;
+            table-layout: fixed;
+        }
+        .clients-table th:nth-child(1),
+        .clients-table td:nth-child(1) { width: 160px; } /* פעולות */
+        .clients-table th:nth-child(2),
+        .clients-table td:nth-child(2) { width: 120px; } /* מס' לקוח */
+        .clients-table th:nth-child(3),
+        .clients-table td:nth-child(3) { width: auto; } /* שם הלקוח */
+        .clients-table th:nth-child(4),
+        .clients-table td:nth-child(4) { width: 120px; } /* מס' הזמנות */
+        
+        .clients-table-container {
+            overflow-x: hidden;
+        }
+        
         .scroll-buttons-sticky {
             position: sticky;
             top: 10px;
@@ -1350,7 +1370,7 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 40</div>
+                <div class="version">גרסה 41</div>
                 <!-- Notification Bell - only for חגי -->
                 <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
                     <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
@@ -1377,7 +1397,7 @@
                 <button class="tab" data-tab="not-paid">💰 טרם שולם <span class="badge" id="badge-not-paid">0</span></button>
                 <button class="tab" data-tab="paid">✅ שולמו <span class="badge" id="badge-paid">0</span></button>
                 <button class="tab" data-tab="deleted">🗑️ נמחקו <span class="badge" id="badge-deleted">0</span></button>
-                <button class="tab" data-tab="clients">👥 לקוחות <span class="badge" id="badge-clients">0</span></button>
+                <button class="tab hagai-only" data-tab="clients">👥 לקוחות <span class="badge" id="badge-clients">0</span></button>
             </div>
 
             <button class="btn btn-secondary logout-btn" onclick="logout()">🚪 התנתק</button>
@@ -1651,7 +1671,9 @@
                             <span class="search-icon">🔍</span>
                         </div>
                         <button type="button" class="btn btn-warning" onclick="showDuplicatesOnly()" id="btn-show-duplicates">⚠️ הצג כפילויות</button>
-                        <button type="button" class="btn btn-danger" onclick="cleanDuplicates()">🧹 נקה כפילויות</button>
+                        <button type="button" class="btn btn-danger hagai-only" onclick="cleanDuplicates()">🧹 נקה כפילויות</button>
+                        <button type="button" class="btn btn-primary" onclick="exportClientsExcel()">📊 ייצוא Excel</button>
+                        <button type="button" class="btn btn-secondary" onclick="exportClientsCSV()">📄 ייצוא CSV</button>
                         <button type="button" class="btn btn-secondary" onclick="renderClientsTable()" style="display: none;" id="btn-show-all-clients">📋 הצג הכל</button>
                     </div>
                     
@@ -1677,8 +1699,8 @@
                         </div>
                     </div>
                     
-                    <div class="table-container">
-                        <table>
+                    <div class="table-container clients-table-container">
+                        <table class="clients-table">
                             <thead>
                                 <tr>
                                     <th>פעולות</th>
@@ -1870,6 +1892,7 @@
         let backupFolderHandle = null; // File System Access API
         let isBackupUser = false;
         let isAdminWithBackup = false; // האם אדמין עם גיבוי מקומי מופעל
+        let canDelete = false; // האם המשתמש יכול למחוק לקוחות/הזמנות
         let backupConfigured = false;
         let lastKnownOrdersHash = ''; // לזיהוי שינויים
 
@@ -3063,6 +3086,7 @@
             
             // הסתרת שדות למשתמשים שאינם חגי
             const isHagai = currentUser?.username === BACKUP_USER || currentUser?.isAdmin;
+            canDelete = isHagai; // רק חגי ואדמין יכולים למחוק
             document.querySelectorAll('.hagai-only').forEach(el => {
                 el.style.display = isHagai ? '' : 'none';
             });
@@ -3570,7 +3594,7 @@
                     <td>
                         <div class="actions-cell">
                             <button class="btn btn-edit" onclick="editClient('${escapeHtml(client.name)}')">✏️ ערוך</button>
-                            <button class="btn btn-danger" onclick="deleteClient('${escapeHtml(client.name)}')">🗑️</button>
+                            ${canDelete ? `<button class="btn btn-danger" onclick="deleteClient('${escapeHtml(client.name)}')">🗑️</button>` : ''}
                         </div>
                     </td>
                     <td><strong>${escapeHtml(client.number)}</strong> ${duplicateWarning}</td>
@@ -3695,7 +3719,7 @@
                     <td>
                         <div class="actions-cell">
                             <button class="btn btn-edit" onclick="editClient('${escapeHtml(client.name)}')">✏️ ערוך</button>
-                            <button class="btn btn-danger" onclick="deleteClient('${escapeHtml(client.name)}')">🗑️ מחק</button>
+                            ${canDelete ? `<button class="btn btn-danger" onclick="deleteClient('${escapeHtml(client.name)}')">🗑️ מחק</button>` : ''}
                         </div>
                     </td>
                     <td><strong>${escapeHtml(client.number)}</strong> ${duplicateWarning}</td>
@@ -3734,6 +3758,10 @@
 
         // מחיקת לקוח
         async function deleteClient(name) {
+            if (!canDelete) {
+                showToast('שגיאה', 'אין לך הרשאה למחוק לקוחות', 'error');
+                return;
+            }
             const orderCount = orders.filter(o => {
                 const match = findClientNumber(o.subject);
                 return match && match.originalName === name;
@@ -3757,6 +3785,10 @@
 
         // ניקוי כפילויות אוטומטי
         async function cleanDuplicates() {
+            if (!canDelete) {
+                showToast('שגיאה', 'אין לך הרשאה לבצע פעולה זו', 'error');
+                return;
+            }
             // איסוף כפילויות לפי מספר לקוח
             const byNumber = {};
             Object.entries(clientNumbers).forEach(([name, number]) => {
@@ -3812,6 +3844,83 @@
                 console.error('Error cleaning duplicates:', e);
                 alert('שגיאה בניקוי כפילויות: ' + e.message);
             }
+        }
+
+        // ייצוא לקוחות ל-CSV
+        function exportClientsCSV() {
+            const clients = Object.entries(clientNumbers)
+                .map(([name, number]) => ({ name, number }))
+                .sort((a, b) => (parseInt(a.number) || 0) - (parseInt(b.number) || 0));
+            
+            if (clients.length === 0) {
+                alert('אין לקוחות לייצוא');
+                return;
+            }
+            
+            // BOM for Hebrew support
+            let csv = '\uFEFF';
+            csv += 'מספר לקוח,שם הלקוח\n';
+            // פונקציה לבריחת ערכי CSV
+            function csvEscape(val) {
+                val = String(val);
+                if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+                    return '"' + val.replace(/"/g, '""') + '"';
+                }
+                return val;
+            }
+            
+            clients.forEach(c => {
+                csv += `${csvEscape(c.number)},${csvEscape(c.name)}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `לקוחות_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('success', 'ייצוא CSV', `${clients.length} לקוחות יוצאו בהצלחה`);
+        }
+
+        // ייצוא לקוחות ל-Excel (HTML table format)
+        function exportClientsExcel() {
+            const clients = Object.entries(clientNumbers)
+                .map(([name, number]) => ({ name, number }))
+                .sort((a, b) => (parseInt(a.number) || 0) - (parseInt(b.number) || 0));
+            
+            if (clients.length === 0) {
+                alert('אין לקוחות לייצוא');
+                return;
+            }
+            
+            let html = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+                <head><meta charset="UTF-8">
+                <style>
+                    body { direction: rtl; }
+                    table { border-collapse: collapse; }
+                    th { background: #f59e0b; color: white; font-weight: bold; padding: 8px; border: 1px solid #ddd; }
+                    td { padding: 8px; border: 1px solid #ddd; text-align: right; }
+                    tr:nth-child(even) { background: #f9f9f9; }
+                </style>
+                </head>
+                <body>
+                <table>
+                    <tr><th>מספר לקוח</th><th>שם הלקוח</th></tr>
+                    ${clients.map(c => `<tr><td>${escapeHtml(c.number)}</td><td>${escapeHtml(c.name)}</td></tr>`).join('')}
+                </table>
+                </body></html>
+            `;
+            
+            const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `לקוחות_${new Date().toISOString().slice(0, 10)}.xls`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('success', 'ייצוא Excel', `${clients.length} לקוחות יוצאו בהצלחה`);
         }
 
         function setTodayAsDefault() {
@@ -4102,7 +4211,7 @@
                         <td>
                             <div class="actions-cell">
                                 <button class="btn btn-restore" onclick="restoreOrder('${order.id}')">♻️ שחזר</button>
-                                <button class="btn btn-danger" onclick="confirmDelete('${order.id}', true)">🗑️ מחק לצמיתות</button>
+                                ${canDelete ? `<button class="btn btn-danger" onclick="confirmDelete('${order.id}', true)">🗑️ מחק לצמיתות</button>` : ''}
                             </div>
                         </td>
                         <td><strong>${order.orderNumber || '-'}</strong></td>
@@ -4124,7 +4233,7 @@
                                 <div class="actions-cell">
                                     <button class="btn btn-edit" onclick="editOrder('${order.id}')">✏️ ערוך</button>
                                     ${getInvoiceButton(order.id)}
-                                    <button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>
+                                    ${canDelete ? `<button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>` : ''}
                                 </div>
                             </td>
                             <td><a href="#" class="order-number-link" onclick="editOrder('${order.id}'); return false;">${order.orderNumber || '-'}</a></td>
@@ -4151,7 +4260,7 @@
                                 <div class="actions-cell">
                                     <button class="btn btn-edit" onclick="editOrder('${order.id}')">✏️ ערוך</button>
                                     ${getInvoiceButton(order.id)}
-                                    <button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>
+                                    ${canDelete ? `<button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>` : ''}
                                 </div>
                             </td>
                             <td><a href="#" class="order-number-link" onclick="editOrder('${order.id}'); return false;">${order.orderNumber || '-'}</a></td>
@@ -4173,7 +4282,7 @@
                                 <div class="actions-cell">
                                     <button class="btn btn-edit" onclick="editOrder('${order.id}')">✏️ ערוך</button>
                                     ${getInvoiceButton(order.id)}
-                                    <button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>
+                                    ${canDelete ? `<button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>` : ''}
                                 </div>
                             </td>
                             <td><a href="#" class="order-number-link" onclick="editOrder('${order.id}'); return false;">${order.orderNumber || '-'}</a></td>
@@ -4192,7 +4301,7 @@
                                 <div class="actions-cell">
                                     <button class="btn btn-edit" onclick="editOrder('${order.id}')">✏️ ערוך</button>
                                     ${getInvoiceButton(order.id)}
-                                    <button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>
+                                    ${canDelete ? `<button class="btn btn-danger" onclick="confirmDelete('${order.id}', false)">🗑️</button>` : ''}
                                 </div>
                             </td>
                             <td><a href="#" class="order-number-link" onclick="editOrder('${order.id}'); return false;">${order.orderNumber || '-'}</a></td>
@@ -4262,6 +4371,10 @@
 
         // פתיחת מודל אישור מחיקה
         function confirmDelete(orderId, isPermanent) {
+            if (!canDelete) {
+                showToast('שגיאה', 'אין לך הרשאה למחוק הזמנות', 'error');
+                return;
+            }
             document.getElementById('delete-order-id').value = orderId;
             document.getElementById('delete-permanent').value = isPermanent ? 'true' : 'false';
             document.getElementById('delete-password').value = '';
