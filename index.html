@@ -6,8 +6,19 @@
     <title>ניהול הזמנות</title>
     <!--
     ═══════════════════════════════════════════════════════════════
-    📋 מערכת ניהול הזמנות - גרסה 44
+    📋 מערכת ניהול הזמנות - גרסה 45
     ═══════════════════════════════════════════════════════════════
+    
+    🆕 חדש בגרסה 45 (16.02.2026):
+    ─────────────────────────────────────────────────────────────
+    ✅ ייצוא תשלומים ל-JSON עבור bank-compare
+       - כפתור חדש "📤 ייצא תשלומים JSON" במסך הראשי
+       - מייצא את **כל התשלומים** ששולמו ע"י הלקוח (לא רק חריגים!)
+       - כולל: מספר הזמנה, שם לקוח, נושא, סכום, תאריך, שולם לעורך
+       - ניתן להעלות ל-bank-compare להשוואה חכמה
+       - המערכת ב-bank-compare תציג פופאפ לכל תשלום גדול מהשוטף
+       - אפשרויות סיווג: הכל שוטף / פיצול (שוטף+חריג) / הכל חריג
+       - פורמט JSON נקי ומובנה
     
     🆕 חדש בגרסה 44 (16.02.2026):
     ─────────────────────────────────────────────────────────────
@@ -1409,8 +1420,8 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version" title="🆕 חדש בגרסה 44: מילוי אוטומטי של תאריך תשלום לעורך | 🆕 חדש בגרסה 43: שינוי סדר עמודות בדוח תשלומים לעורך">
-                    גרסה 44 | עודכן: 16.02.2026
+                <div class="version" title="🆕 חדש בגרסה 45: ייצוא תשלומים JSON - כל התשלומים ששולמו ע״י לקוחות לשימוש ב-bank-compare עם סיווג חכם | 🆕 חדש בגרסה 44: מילוי אוטומטי של תאריך תשלום לעורך">
+                    גרסה 45 | עודכן: 16.02.2026
                     <span style="cursor: help; margin-right: 5px;">ℹ️</span>
                 </div>
                 <!-- Notification Bell - only for חגי -->
@@ -1546,6 +1557,7 @@
                         </div>
                         <div class="report-buttons">
                             <button class="btn btn-primary" onclick="generateReport('all')">📄 דוח כללי</button>
+                            <button class="btn btn-primary" onclick="exportExceptionsJSON()" style="background: linear-gradient(135deg, #00d9ff, #00ff88);">📤 ייצא תשלומים JSON</button>
                             <div class="report-by-field">
                                 <button class="btn btn-secondary" onclick="toggleReportDropdown()">📊 דוח לפי...</button>
                                 <div class="report-dropdown" id="report-dropdown">
@@ -5793,6 +5805,58 @@
                     </tbody>
                 </table>
             `;
+        }
+
+        // ייצוא תשלומים ל-JSON עבור bank-compare
+        function exportExceptionsJSON() {
+            // סינון: כל ההזמנות שהלקוח שילם
+            const paidOrders = orders.filter(o => o.paymentDate);
+            
+            if (paidOrders.length === 0) {
+                alert('אין הזמנות ששולמו על ידי לקוחות');
+                return;
+            }
+            
+            // חישוב סה"כ
+            const totalAmount = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
+            
+            // בניית אובייקט JSON
+            const jsonData = {
+                תאריך_ייצוא: new Date().toLocaleDateString('he-IL'),
+                שעת_ייצוא: new Date().toLocaleTimeString('he-IL'),
+                מספר_תשלומים: paidOrders.length,
+                סהכ_סכום: totalAmount,
+                תשלומים: paidOrders.map(o => ({
+                    מספר_הזמנה: o.orderNumber || 0,
+                    שם_לקוח: o.subject || '',
+                    נושא: o.courtName || '',
+                    סכום: o.amount || 0,
+                    תאריך_תשלום: o.paymentDate || '',
+                    חשבון_עסקה: o.transactionInvoice || '',
+                    שולם_לעורך: o.paidOrganizer === 'yes' ? 'כן' : 'לא',
+                    מס_חשבונית: o.invoiceNumber || '',
+                    הערות: o.notes || ''
+                }))
+            };
+            
+            // המרה ל-JSON מסודר
+            const jsonString = JSON.stringify(jsonData, null, 2);
+            
+            // יצירת קובץ להורדה
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `תשלומים_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            // הודעת הצלחה
+            showToast(
+                '✅ ייצוא בוצע בהצלחה',
+                `${paidOrders.length} תשלומים יוצאו לקובץ JSON`,
+                'backup'
+            );
         }
 
         // התחלה
