@@ -4,6 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ניהול הזמנות</title>
+    <!--
+    ═══════════════════════════════════════════════════════════════
+    📋 מערכת ניהול הזמנות - גרסה 44
+    ═══════════════════════════════════════════════════════════════
+    
+    🆕 חדש בגרסה 44 (16.02.2026):
+    ─────────────────────────────────────────────────────────────
+    ✅ מילוי אוטומטי של תאריך תשלום לעורך המכרז
+       - כאשר משנים "שולם לעורך המכרז" ל-"כן", המערכת תמלא אוטומטית
+         את התאריך הנוכחי בשדה "שולם לעורך בתאריך"
+       - חוסך זמן ומונע שכחה למלא את התאריך
+       - פועל גם בהוספת הזמנה חדשה וגם בעריכת הזמנה קיימת
+    
+    🆕 חדש בגרסה 43 (16.02.2026):
+    ─────────────────────────────────────────────────────────────
+    ✅ שינוי סדר עמודות בדוח "תשלומים ממתינים לעורך"
+       - עמודת "סכום להעברה לעורך (50%)" מופיעה כעת מיד אחרי "נושא המכרז"
+       - עמודת "סכום ששולם ע"י הלקוח" עברה לאחר העמודה הירוקה
+       - שיפור ויזואלי לקריאות הדוח
+    
+    🆕 חדש בגרסה 42 (16.02.2026):
+    ─────────────────────────────────────────────────────────────
+    ✅ הוספת דוח "תשלומים ממתינים לעורך המכרז"
+       - פילטר חכם: מציג רק מכרזים שהלקוח שילם אבל עדיין לא הועבר תשלום לעורך
+       - טבלה מיוחדת עם עמודת "סכום להעברה לעורך" (50%)
+       - סיכום כולל: סה"כ לקוחות ששילמו וסה"כ להעברה לעורך
+       - ממוין לפי תאריך תשלום (הכי ישנים קודם)
+    
+    ✅ שיפור מספר גירסה
+       - הצגת תאריך עדכון אחרון
+       - תיעוד שינויים מפורט
+    
+    📌 גרסאות קודמות:
+    ─────────────────────────────────────────────────────────────
+    גרסה 41: מערכת גיבוי אוטומטי, התראות משופרות
+    גרסה 40: שדות "שולם לעורך המכרז" ו"מס' חשבונית"
+    
+    ═══════════════════════════════════════════════════════════════
+    -->
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -1370,7 +1409,10 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version">גרסה 41</div>
+                <div class="version" title="🆕 חדש בגרסה 44: מילוי אוטומטי של תאריך תשלום לעורך | 🆕 חדש בגרסה 43: שינוי סדר עמודות בדוח תשלומים לעורך">
+                    גרסה 44 | עודכן: 16.02.2026
+                    <span style="cursor: help; margin-right: 5px;">ℹ️</span>
+                </div>
                 <!-- Notification Bell - only for חגי -->
                 <div style="margin-top: 0.75rem; display: none;" id="notification-bell-wrapper">
                     <span class="notification-bell" id="notification-bell" onclick="toggleBellPanel()">
@@ -3969,6 +4011,9 @@
             document.getElementById('order-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
+                const paidOrganizerValue = document.getElementById('paid-organizer').value;
+                const paidOrganizerDateValue = document.getElementById('paid-organizer-date').value;
+                
                 const order = {
                     subject: document.getElementById('subject').value,
                     clientNumber: document.getElementById('client-number').value,
@@ -3979,8 +4024,8 @@
                     sentPaymentDate: document.getElementById('sent-payment-date').value,
                     amount: parseFloat(document.getElementById('amount').value) || 0,
                     paymentDate: document.getElementById('paid-by-client').value === 'yes' ? new Date().toISOString().split('T')[0] : '',
-                    paidOrganizer: document.getElementById('paid-organizer').value,
-                    paidOrganizerDate: document.getElementById('paid-organizer-date').value,
+                    paidOrganizer: paidOrganizerValue,
+                    paidOrganizerDate: (paidOrganizerValue === 'yes' && !paidOrganizerDateValue) ? new Date().toISOString().split('T')[0] : paidOrganizerDateValue,
                     invoiceNumber: document.getElementById('invoice-number').value,
                     notes: document.getElementById('notes').value,
                     createdAt: Date.now(),
@@ -4031,6 +4076,10 @@
                 e.preventDefault();
                 
                 const id = document.getElementById('edit-id').value;
+                const paidOrganizerValue = document.getElementById('edit-paid-organizer').value;
+                const paidOrganizerDateValue = document.getElementById('edit-paid-organizer-date').value;
+                const existingOrder = orders.find(o => o.id === id);
+                
                 const order = {
                     subject: document.getElementById('edit-subject').value,
                     clientNumber: document.getElementById('edit-client-number').value,
@@ -4040,9 +4089,9 @@
                     sentDate: document.getElementById('edit-sent-date').value,
                     sentPaymentDate: document.getElementById('edit-sent-payment-date').value,
                     amount: parseFloat(document.getElementById('edit-amount').value) || 0,
-                    paymentDate: document.getElementById('edit-paid-by-client').value === 'yes' ? (orders.find(o => o.id === id)?.paymentDate || new Date().toISOString().split('T')[0]) : '',
-                    paidOrganizer: document.getElementById('edit-paid-organizer').value,
-                    paidOrganizerDate: document.getElementById('edit-paid-organizer-date').value,
+                    paymentDate: document.getElementById('edit-paid-by-client').value === 'yes' ? (existingOrder?.paymentDate || new Date().toISOString().split('T')[0]) : '',
+                    paidOrganizer: paidOrganizerValue,
+                    paidOrganizerDate: (paidOrganizerValue === 'yes' && !paidOrganizerDateValue) ? new Date().toISOString().split('T')[0] : paidOrganizerDateValue,
                     transactionInvoice: document.getElementById('edit-transaction-invoice').value,
                     invoiceNumber: document.getElementById('edit-invoice-number').value,
                     notes: document.getElementById('edit-notes').value,
@@ -5676,8 +5725,8 @@
                             <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">מס'</th>
                             <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">שם הלקוח</th>
                             <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">נושא המכרז</th>
-                            <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">סכום ששולם ע"י הלקוח</th>
                             <th style="background: #10b981; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">סכום להעברה לעורך (50%)</th>
+                            <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">סכום ששולם ע"י הלקוח</th>
                             <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">תאריך תשלום</th>
                         </tr>
                     </thead>
@@ -5691,8 +5740,8 @@
                                 <td style="${cellStyle}">${idx + 1}</td>
                                 <td style="${cellStyle}"><strong>${escapeHtml(order.subject)}</strong></td>
                                 <td style="${cellStyle}">${escapeHtml(order.courtName) || '-'}</td>
-                                <td style="${cellStyle}">₪${(order.amount || 0).toLocaleString()}</td>
                                 <td style="${cellStyle}; background: #d1fae5; font-weight: bold;">₪${amountToOrganizer.toLocaleString()}</td>
+                                <td style="${cellStyle}">₪${(order.amount || 0).toLocaleString()}</td>
                                 <td style="${cellStyle}">${formatDate(order.paymentDate)}</td>
                             </tr>
                         `}).join('')}
