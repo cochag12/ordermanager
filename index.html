@@ -1514,6 +1514,7 @@
                                     <button onclick="generateReport('byAmount')">לפי סכום</button>
                                     <button onclick="generateReport('byTransactionInvoice')">לפי חשבון עסקה</button>
                                     <button onclick="generateReport('paidOnly')">✅ שולמו בלבד</button>
+                                    <button onclick="generateReport('pendingOrganizerPayment')">💰 תשלומים ממתינים לעורך</button>
                                 </div>
                             </div>
                         </div>
@@ -5553,6 +5554,17 @@
                         return new Date(b.paymentDate) - new Date(a.paymentDate);
                     });
                     break;
+                case 'pendingOrganizerPayment':
+                    title = '💰 תשלומים ממתינים לעורך המכרז';
+                    // פילטר: רק הזמנות שהלקוח שילם אבל עדיין לא שולם לעורך המכרז
+                    reportData = reportData.filter(o => o.paymentDate && o.paidOrganizer !== 'yes');
+                    // מיון לפי תאריך תשלום (הכי ישנים קודם)
+                    reportData.sort((a, b) => {
+                        if (!a.paymentDate) return 1;
+                        if (!b.paymentDate) return -1;
+                        return new Date(a.paymentDate) - new Date(b.paymentDate);
+                    });
+                    break;
             }
 
             // יצירת תצוגה מקדימה במודל
@@ -5572,10 +5584,10 @@
                     const groupTotal = groupOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
                     
                     contentHtml += `<h2 style="color: #333; margin-top: 20px; background: #f5f5f5; padding: 10px; border-radius: 5px;">${groupName} (${groupOrders.length} הזמנות, סה"כ: ₪${groupTotal.toLocaleString()})</h2>`;
-                    contentHtml += generateReportTable(groupOrders);
+                    contentHtml += (type === 'pendingOrganizerPayment') ? generateOrganizerPaymentTable(groupOrders) : generateReportTable(groupOrders);
                 });
             } else {
-                contentHtml += generateReportTable(reportData);
+                contentHtml += (type === 'pendingOrganizerPayment') ? generateOrganizerPaymentTable(reportData) : generateReportTable(reportData);
             }
 
             // סיכום כללי
@@ -5583,15 +5595,31 @@
             const totalPaid = reportData.filter(o => o.paymentDate).reduce((sum, o) => sum + (o.amount || 0), 0);
             const totalPaidOrganizer = reportData.filter(o => o.paidOrganizer === 'yes').length;
 
-            contentHtml += `
-                <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
-                    <strong>סיכום כללי:</strong><br>
-                    סה"כ הזמנות: ${reportData.length}<br>
-                    סה"כ לחיוב: ₪${totalAmount.toLocaleString()}<br>
-                    סה"כ שולם: ₪${totalPaid.toLocaleString()}<br>
-                    שולם לעורך המכרז: ${totalPaidOrganizer} מתוך ${reportData.length}
-                </div>
-            `;
+            // סיכום מיוחד לדוח תשלומים לעורך המכרז
+            if (type === 'pendingOrganizerPayment') {
+                const totalToOrganizer = totalAmount / 2; // 50% מסה"כ התשלומים
+                contentHtml += `
+                    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 5px;">
+                        <strong style="font-size: 1.1em; color: #856404;">💰 סיכום תשלומים ממתינים:</strong><br><br>
+                        <div style="font-size: 1.05em;">
+                            מספר מכרזים ממתינים: <strong style="color: #d32f2f;">${reportData.length}</strong><br>
+                            <hr style="border: none; border-top: 1px dashed #ddd; margin: 10px 0;">
+                            סה"כ ששולם ע"י לקוחות: <strong style="color: #10b981;">₪${totalAmount.toLocaleString()}</strong><br>
+                            <strong style="color: #f59e0b; font-size: 1.2em;">סה"כ להעברה לעורכי מכרז: ₪${totalToOrganizer.toLocaleString()}</strong>
+                        </div>
+                    </div>
+                `;
+            } else {
+                contentHtml += `
+                    <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
+                        <strong>סיכום כללי:</strong><br>
+                        סה"כ הזמנות: ${reportData.length}<br>
+                        סה"כ לחיוב: ₪${totalAmount.toLocaleString()}<br>
+                        סה"כ שולם: ₪${totalPaid.toLocaleString()}<br>
+                        שולם לעורך המכרז: ${totalPaidOrganizer} מתוך ${reportData.length}
+                    </div>
+                `;
+            }
 
             document.getElementById('report-preview-title').textContent = '📋 ' + title;
             document.getElementById('report-preview-content').innerHTML = contentHtml;
@@ -5637,6 +5665,40 @@
         // סגירת תצוגה מקדימה
         function closeReportPreview() {
             document.getElementById('report-preview-modal').classList.remove('active');
+        }
+
+        // טבלה מיוחדת לדוח תשלומים לעורך המכרז
+        function generateOrganizerPaymentTable(data) {
+            return `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em;">
+                    <thead>
+                        <tr>
+                            <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">מס'</th>
+                            <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">שם הלקוח</th>
+                            <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">נושא המכרז</th>
+                            <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">סכום ששולם ע"י הלקוח</th>
+                            <th style="background: #10b981; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">סכום להעברה לעורך (50%)</th>
+                            <th style="background: #f59e0b; color: white; border: 1px solid #ddd; padding: 8px; text-align: right;">תאריך תשלום</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map((order, idx) => {
+                            const amountToOrganizer = (order.amount || 0) / 2;
+                            const rowBg = idx % 2 === 0 ? '#fff' : '#f9f9f9';
+                            const cellStyle = 'border: 1px solid #ddd; padding: 8px; text-align: right;';
+                            return `
+                            <tr style="background: ${rowBg};">
+                                <td style="${cellStyle}">${idx + 1}</td>
+                                <td style="${cellStyle}"><strong>${escapeHtml(order.subject)}</strong></td>
+                                <td style="${cellStyle}">${escapeHtml(order.courtName) || '-'}</td>
+                                <td style="${cellStyle}">₪${(order.amount || 0).toLocaleString()}</td>
+                                <td style="${cellStyle}; background: #d1fae5; font-weight: bold;">₪${amountToOrganizer.toLocaleString()}</td>
+                                <td style="${cellStyle}">${formatDate(order.paymentDate)}</td>
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+            `;
         }
 
         function generateReportTable(data) {
