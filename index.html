@@ -6,8 +6,22 @@
     <title>ניהול הזמנות</title>
     <!--
     ═══════════════════════════════════════════════════════════════
-    📋 מערכת ניהול הזמנות - גרסה 45
+    📋 מערכת ניהול הזמנות - גרסה 46
     ═══════════════════════════════════════════════════════════════
+    
+    🆕 חדש בגרסה 46 (17.02.2026):
+    ─────────────────────────────────────────────────────────────
+    ✅ מנגנון מעקב אחרי דוחות JSON - מניעת כפילויות
+       - שני כפתורים חדשים:
+         📤 "ייצא תשלומים חדשים JSON" - רק רשומות שלא יוצאו קודם
+         📋 "ייצא כל התשלומים JSON" - דוח כללי של הכל
+       - באדג' חי על הכפתור מציג כמה תשלומים חדשים יש
+       - הודעה ויזואלית ברורה כשאין תשלומים חדשים
+       - המערכת מסמנת אוטומטית רשומות שיוצאו בדוח
+       - בדוח הבא יוצגו רק תשלומים חדשים שלא נכללו קודם
+       - מונע כפילויות ומאפשר מעקב נוח
+       - ניתן לאפס את הסימונים ולייצא הכל מחדש
+       - 🔧 תיקון: שימוש ב-Firebase Realtime Database API הנכון
     
     🆕 חדש בגרסה 45 (16.02.2026):
     ─────────────────────────────────────────────────────────────
@@ -649,6 +663,32 @@
 
         .btn-danger:hover {
             background: #dc2626;
+        }
+
+        /* באדג' לכפתורי ייצוא JSON */
+        .btn-with-badge {
+            position: relative;
+        }
+
+        .json-badge {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
+            animation: badgePulse 2s infinite;
+        }
+
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         /* סגנון לכותרות ניתנות למיון */
@@ -1420,8 +1460,8 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version" title="🆕 חדש בגרסה 45: ייצוא תשלומים JSON - כל התשלומים ששולמו ע״י לקוחות לשימוש ב-bank-compare עם סיווג חכם | 🆕 חדש בגרסה 44: מילוי אוטומטי של תאריך תשלום לעורך">
-                    גרסה 45 | עודכן: 16.02.2026
+                <div class="version" title="🆕 חדש בגרסה 46: מנגנון מעקב דוחות JSON - מניעת כפילויות | באדג' חי מציג כמה תשלומים חדשים | הודעה ויזואלית כשאין חדשים | ייצוא תשלומים חדשים | ייצוא כל התשלומים">
+                    גרסה 46 | עודכן: 17.02.2026
                     <span style="cursor: help; margin-right: 5px;">ℹ️</span>
                 </div>
                 <!-- Notification Bell - only for חגי -->
@@ -1557,7 +1597,11 @@
                         </div>
                         <div class="report-buttons">
                             <button class="btn btn-primary" onclick="generateReport('all')">📄 דוח כללי</button>
-                            <button class="btn btn-primary" onclick="exportExceptionsJSON()" style="background: linear-gradient(135deg, #00d9ff, #00ff88);">📤 ייצא תשלומים JSON</button>
+                            <div class="btn-with-badge" style="display: inline-block; position: relative;">
+                                <span class="json-badge" id="new-payments-badge" style="display: none;">0</span>
+                                <button class="btn btn-primary" onclick="exportNewPaymentsJSON()" style="background: linear-gradient(135deg, #00d9ff, #00ff88);">📤 ייצא תשלומים חדשים JSON</button>
+                            </div>
+                            <button class="btn btn-primary" onclick="exportAllPaymentsJSON()" style="background: linear-gradient(135deg, #a855f7, #ec4899);">📋 ייצא כל התשלומים JSON</button>
                             <div class="report-by-field">
                                 <button class="btn btn-secondary" onclick="toggleReportDropdown()">📊 דוח לפי...</button>
                                 <div class="report-dropdown" id="report-dropdown">
@@ -1569,6 +1613,7 @@
                                     <button onclick="generateReport('byTransactionInvoice')">לפי חשבון עסקה</button>
                                     <button onclick="generateReport('paidOnly')">✅ שולמו בלבד</button>
                                     <button onclick="generateReport('pendingOrganizerPayment')">💰 תשלומים ממתינים לעורך</button>
+                                    <button onclick="resetJsonExportFlags()" style="border-top: 2px solid #3d4654; margin-top: 5px; color: #ef4444;">🔄 אפס סימון דוחות JSON</button>
                                 </div>
                             </div>
                         </div>
@@ -3359,6 +3404,7 @@
                     
                     orders = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
                     renderAll();
+                    updateNewPaymentsBadge(); // עדכון הבאדג' של תשלומים חדשים
                     setupSortableHeaders();
                     showApp();
                     
@@ -5807,26 +5853,47 @@
             `;
         }
 
-        // ייצוא תשלומים ל-JSON עבור bank-compare
-        function exportExceptionsJSON() {
-            // סינון: כל ההזמנות שהלקוח שילם
-            const paidOrders = orders.filter(o => o.paymentDate);
+        // עדכון הבאדג' על כפתור ייצוא תשלומים חדשים
+        function updateNewPaymentsBadge() {
+            const newPaidOrders = orders.filter(o => o.paymentDate && !o.exportedToJson);
+            const badge = document.getElementById('new-payments-badge');
             
-            if (paidOrders.length === 0) {
-                alert('אין הזמנות ששולמו על ידי לקוחות');
+            if (badge) {
+                if (newPaidOrders.length > 0) {
+                    badge.textContent = newPaidOrders.length;
+                    badge.style.display = 'block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        // ייצוא תשלומים חדשים ל-JSON (רק מה שלא יוצא בעבר)
+        function exportNewPaymentsJSON() {
+            // סינון: כל ההזמנות שהלקוח שילם ועוד לא יוצאו בדוח
+            const newPaidOrders = orders.filter(o => o.paymentDate && !o.exportedToJson);
+            
+            if (newPaidOrders.length === 0) {
+                // אינדיקציה ויזואלית ברורה
+                showToast(
+                    '💡 אין תשלומים חדשים',
+                    'כל התשלומים כבר נכללו בדוח קודם. אם ברצונך לייצא הכל מחדש, השתמש בכפתור "ייצא כל התשלומים".',
+                    'info'
+                );
                 return;
             }
             
             // חישוב סה"כ
-            const totalAmount = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
+            const totalAmount = newPaidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
             
             // בניית אובייקט JSON
             const jsonData = {
                 תאריך_ייצוא: new Date().toLocaleDateString('he-IL'),
                 שעת_ייצוא: new Date().toLocaleTimeString('he-IL'),
-                מספר_תשלומים: paidOrders.length,
+                סוג_דוח: 'חדש - רק תשלומים שלא יוצאו קודם',
+                מספר_תשלומים: newPaidOrders.length,
                 סהכ_סכום: totalAmount,
-                תשלומים: paidOrders.map(o => ({
+                תשלומים: newPaidOrders.map(o => ({
                     מספר_הזמנה: o.orderNumber || 0,
                     שם_לקוח: o.subject || '',
                     נושא: o.courtName || '',
@@ -5839,6 +5906,86 @@
                 }))
             };
             
+            // סימון הרשומות כיוצאו - Realtime Database API
+            const updates = {};
+            newPaidOrders.forEach(order => {
+                updates[`orders/${order.id}/exportedToJson`] = true;
+            });
+            
+            // שמירה ב-Firebase
+            db.ref().update(updates).then(() => {
+                // עדכון מקומי
+                newPaidOrders.forEach(order => {
+                    order.exportedToJson = true;
+                });
+                
+                // המרה ל-JSON מסודר
+                const jsonString = JSON.stringify(jsonData, null, 2);
+                
+                // יצירת קובץ להורדה
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `תשלומים_חדשים_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                // הודעת הצלחה
+                showToast(
+                    '✅ ייצוא תשלומים חדשים בוצע בהצלחה',
+                    `${newPaidOrders.length} תשלומים חדשים יוצאו לקובץ JSON`,
+                    'backup'
+                );
+                
+                // עדכון הבאדג'
+                updateNewPaymentsBadge();
+            }).catch(err => {
+                console.error('Error marking orders as exported:', err);
+                alert('שגיאה בסימון רשומות. הייצוא בוצע אך הסימון נכשל.');
+            });
+        }
+
+        // ייצוא כל התשלומים ל-JSON (דוח כללי)
+        function exportAllPaymentsJSON() {
+            // סינון: כל ההזמנות שהלקוח שילם
+            const paidOrders = orders.filter(o => o.paymentDate);
+            
+            if (paidOrders.length === 0) {
+                alert('אין הזמנות ששולמו על ידי לקוחות');
+                return;
+            }
+            
+            // ספירת כמה כבר יוצאו וכמה חדשים
+            const alreadyExported = paidOrders.filter(o => o.exportedToJson).length;
+            const newOrders = paidOrders.length - alreadyExported;
+            
+            // חישוב סה"כ
+            const totalAmount = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
+            
+            // בניית אובייקט JSON
+            const jsonData = {
+                תאריך_ייצוא: new Date().toLocaleDateString('he-IL'),
+                שעת_ייצוא: new Date().toLocaleTimeString('he-IL'),
+                סוג_דוח: 'כללי - כל התשלומים',
+                מספר_תשלומים_כולל: paidOrders.length,
+                מתוכם_כבר_יוצאו_קודם: alreadyExported,
+                מתוכם_חדשים: newOrders,
+                סהכ_סכום: totalAmount,
+                תשלומים: paidOrders.map(o => ({
+                    מספר_הזמנה: o.orderNumber || 0,
+                    שם_לקוח: o.subject || '',
+                    נושא: o.courtName || '',
+                    סכום: o.amount || 0,
+                    תאריך_תשלום: o.paymentDate || '',
+                    חשבון_עסקה: o.transactionInvoice || '',
+                    שולם_לעורך: o.paidOrganizer === 'yes' ? 'כן' : 'לא',
+                    מס_חשבונית: o.invoiceNumber || '',
+                    הערות: o.notes || '',
+                    יוצא_קודם: o.exportedToJson ? 'כן' : 'לא'
+                }))
+            };
+            
             // המרה ל-JSON מסודר
             const jsonString = JSON.stringify(jsonData, null, 2);
             
@@ -5847,16 +5994,63 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `תשלומים_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `כל_התשלומים_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
             
             // הודעת הצלחה
             showToast(
-                '✅ ייצוא בוצע בהצלחה',
-                `${paidOrders.length} תשלומים יוצאו לקובץ JSON`,
+                '✅ ייצוא כל התשלומים בוצע בהצלחה',
+                `${paidOrders.length} תשלומים יוצאו (${newOrders} חדשים, ${alreadyExported} יוצאו קודם)`,
                 'backup'
             );
+        }
+
+        // איפוס סימון דוחות JSON - מאפשר להתחיל מחדש
+        function resetJsonExportFlags() {
+            // בדיקה אם יש בכלל רשומות מסומנות
+            const exportedOrders = orders.filter(o => o.exportedToJson);
+            
+            if (exportedOrders.length === 0) {
+                alert('אין רשומות מסומנות לאיפוס.\nכל הרשומות כבר לא מסומנות.');
+                return;
+            }
+            
+            // אישור מהמשתמש
+            const confirmed = confirm(
+                `האם לאפס את סימון הייצוא של ${exportedOrders.length} רשומות?\n\n` +
+                'לאחר האיפוס, כל התשלומים ייכללו שוב בדוח "תשלומים חדשים".\n\n' +
+                'זה שימושי אם תרצה להתחיל מעקב מחדש או לייצא הכל מחדש.'
+            );
+            
+            if (!confirmed) return;
+            
+            // איפוס הסימונים ב-Firebase - Realtime Database API
+            const updates = {};
+            exportedOrders.forEach(order => {
+                updates[`orders/${order.id}/exportedToJson`] = false;
+            });
+            
+            // שמירה
+            db.ref().update(updates).then(() => {
+                // עדכון מקומי
+                exportedOrders.forEach(order => {
+                    order.exportedToJson = false;
+                });
+                
+                // הודעת הצלחה
+                showToast(
+                    '✅ איפוס בוצע בהצלחה',
+                    `${exportedOrders.length} רשומות אופסו. כעת כל התשלומים ייכללו בדוח החדש.`,
+                    'success'
+                );
+                
+                // עדכון הבאדג'
+                updateNewPaymentsBadge();
+            }).catch(err => {
+                console.error('Error resetting export flags:', err);
+                alert('שגיאה באיפוס הסימונים. נסה שוב.');
+            });
         }
 
         // התחלה
