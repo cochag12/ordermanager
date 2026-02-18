@@ -6,7 +6,7 @@
     <title>ניהול הזמנות</title>
     <!--
     ═══════════════════════════════════════════════════════════════
-    📋 מערכת ניהול הזמנות - גרסה 46
+    📋 מערכת ניהול הזמנות - גרסה 47
     ═══════════════════════════════════════════════════════════════
     
     🆕 חדש בגרסה 46 (17.02.2026):
@@ -1516,8 +1516,9 @@
                             </div>
                             <div class="form-group hagai-only">
                                 <label for="status">סטטוס</label>
-                                <select id="status">
-                                    <option value="draft" selected>טיוטה</option>
+                                <select id="status" onchange="onStatusChange(this.value, 'sent-date')">
+                                    <option value="not_sent" selected>טרם נשלח</option>
+                                    <option value="draft">טיוטה</option>
                                     <option value="final">סופי</option>
                                 </select>
                             </div>
@@ -1898,7 +1899,8 @@
                     </div>
                     <div class="form-group">
                         <label for="edit-status">סטטוס</label>
-                        <select id="edit-status">
+                        <select id="edit-status" onchange="onStatusChange(this.value, 'edit-sent-date')">
+                            <option value="not_sent">טרם נשלח</option>
                             <option value="draft">טיוטה</option>
                             <option value="final">סופי</option>
                         </select>
@@ -4334,7 +4336,11 @@
                 tbody.innerHTML = filteredOrders.map(order => {
                     const match = findClientNumber(order.subject);
                     const clientNum = match ? match.number : (order.clientNumber || '-');
-                    const statusText = order.status === 'final' ? '<span class="status status-yes"><span class="status-dot"></span>סופי</span>' : '<span class="status status-no"><span class="status-dot"></span>טיוטה</span>';
+                    const statusText = order.status === 'final' 
+                        ? '<span class="status status-yes"><span class="status-dot"></span>סופי</span>' 
+                        : order.status === 'draft' 
+                            ? '<span class="status status-no"><span class="status-dot"></span>טיוטה</span>'
+                            : '<span class="status" style="background:rgba(156,163,175,0.15);color:#9ca3af;padding:2px 8px;border-radius:4px;font-size:0.8rem;"><span class="status-dot" style="background:#9ca3af"></span>טרם נשלח</span>';
                     return `
                         <tr class="${order.paymentDate ? 'paid-row' : ''}">
                             <td>
@@ -4446,6 +4452,16 @@
         }
 
         // עריכת הזמנה
+        // כשמשנים סטטוס ל"טיוטה" או "סופי" - ממלא אוטומטית תאריך "נשלח ללקוח"
+        function onStatusChange(newValue, sentDateFieldId) {
+            if (newValue === 'draft' || newValue === 'final') {
+                const sentDateField = document.getElementById(sentDateFieldId);
+                if (sentDateField && !sentDateField.value) {
+                    sentDateField.value = new Date().toISOString().split('T')[0];
+                }
+            }
+        }
+
         function editOrder(id) {
             const order = orders.find(o => o.id === id);
             if (!order) return;
@@ -4457,7 +4473,7 @@
             const clientNum = match ? match.number : (order.clientNumber || '');
             document.getElementById('edit-client-number').value = clientNum;
             document.getElementById('edit-order-date').value = order.orderDate;
-            document.getElementById('edit-status').value = order.status || 'draft';
+            document.getElementById('edit-status').value = order.status || 'not_sent';
             document.getElementById('edit-court-name').value = order.courtName || '';
             document.getElementById('edit-sent-date').value = order.sentDate || '';
             document.getElementById('edit-sent-payment-date').value = order.sentPaymentDate || '';
