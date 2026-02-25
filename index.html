@@ -6,10 +6,18 @@
     <title>ניהול הזמנות</title>
     <!--
     ═══════════════════════════════════════════════════════════════
-    📋 מערכת ניהול הזמנות - גרסה 47
+    📋 מערכת ניהול הזמנות - גרסה 48
     ═══════════════════════════════════════════════════════════════
     
-    🆕 חדש בגרסה 46 (17.02.2026):
+    🆕 חדש בגרסה 48 (25.02.2026):
+    ─────────────────────────────────────────────────────────────
+    ✅ Firebase Anonymous Authentication
+       - הוספת firebase-auth-compat.js SDK
+       - כניסה אנונימית אוטומטית לפני גישה ל-Database
+       - חוקי אבטחה: ".read": "auth != null", ".write": "auth != null"
+       - מסיר את אזהרת "public database" מ-Firebase Console
+       - initFirebase ו-initFirebaseForAdmin הפכו async
+       - תומך גם בתרחיש שחזור אוטומטי
     ─────────────────────────────────────────────────────────────
     ✅ מנגנון מעקב אחרי דוחות JSON - מניעת כפילויות
        - שני כפתורים חדשים:
@@ -1460,8 +1468,8 @@
                     <span class="sync-dot"></span>
                     <span>מסונכרן בזמן אמת</span>
                 </div>
-                <div class="version" title="🆕 חדש בגרסה 46: מנגנון מעקב דוחות JSON - מניעת כפילויות | באדג' חי מציג כמה תשלומים חדשים | הודעה ויזואלית כשאין חדשים | ייצוא תשלומים חדשים | ייצוא כל התשלומים">
-                    גרסה 46 | עודכן: 17.02.2026
+                <div class="version" title="🆕 חדש בגרסה 48: Firebase Anonymous Auth - אבטחה משופרת ללא אזהרות | חדש בגרסה 46: מנגנון מעקב דוחות JSON - מניעת כפילויות | באדג' חי מציג כמה תשלומים חדשים | הודעה ויזואלית כשאין חדשים | ייצוא תשלומים חדשים | ייצוא כל התשלומים">
+                    גרסה 48 | עודכן: 25.02.2026
                     <span style="cursor: help; margin-right: 5px;">ℹ️</span>
                 </div>
                 <!-- Notification Bell - only for חגי -->
@@ -1963,6 +1971,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <!-- DOCX Library -->
     <script src="https://unpkg.com/docx@8.2.2/build/index.umd.js"></script>
 
@@ -3040,6 +3049,10 @@
                         if (!firebase.apps.length) {
                             firebase.initializeApp(firebaseConfig);
                         }
+                        // כניסה אנונימית לפני גישה ל-Database
+                        if (!firebase.auth().currentUser) {
+                            await firebase.auth().signInAnonymously();
+                        }
                         db = firebase.database();
                         
                         const restoreResult = await autoRestoreFromFolder();
@@ -3306,11 +3319,17 @@
         });
 
         // אתחול Firebase למנהל (רק משתמשים)
-        function initFirebaseForAdmin() {
+        async function initFirebaseForAdmin() {
             try {
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
                 }
+                
+                // כניסה אנונימית - מקנה הרשאת גישה ל-Database
+                if (!firebase.auth().currentUser) {
+                    await firebase.auth().signInAnonymously();
+                }
+                
                 db = firebase.database();
                 
                 // האזנה למשתמשים בלבד
@@ -3387,11 +3406,17 @@
         }
 
         // אתחול Firebase
-        function initFirebase() {
+        async function initFirebase() {
             try {
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
                 }
+                
+                // כניסה אנונימית - מקנה הרשאת גישה ל-Database
+                if (!firebase.auth().currentUser) {
+                    await firebase.auth().signInAnonymously();
+                }
+                
                 db = firebase.database();
                 
                 // האזנה לשינויים בזמן אמת - הזמנות פעילות
